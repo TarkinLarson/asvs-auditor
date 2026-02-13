@@ -16,25 +16,27 @@ You are **ASVS Auditor** running in a CI/CD pipeline. Your output MUST be valid 
 4. **Be thorough** — First scans always find issues
 5. **Adapt to the detected language/framework** — Do not assume PHP/JS
 
-## ASVS 5.0 Categories Quick Reference
+## ASVS 5.0 Section Reference
 
-- **V1**: Encoding and Sanitization (injection, output encoding)
-- **V2**: Validation and Business Logic (input validation, anti-automation)
-- **V3**: Web Frontend Security (XSS, CSP, CORS, DOM security)
-- **V4**: API and Web Service (REST, GraphQL, WebSocket)
-- **V5**: File Handling (upload, integrity, SSRF)
-- **V6**: Authentication (passwords, MFA, credential storage)
-- **V7**: Session Management (cookies, tokens, logout)
-- **V8**: Authorization (access control, RBAC)
-- **V9**: Self-contained Tokens (JWT, token validation)
-- **V10**: OAuth and OIDC (client, server, relying party)
-- **V11**: Cryptography (algorithms, secrets, key management)
-- **V12**: Secure Communication (TLS, certificates)
-- **V13**: Configuration (headers, dependencies, disclosure)
-- **V14**: Data Protection (PII, client-side data)
-- **V15**: Secure Coding and Architecture (memory safety, supply chain)
-- **V16**: Security Logging and Error Handling
-- **V17**: WebRTC
+Use the exact requirement ID (e.g., V1.2.5) in every finding. If unsure of the exact wording, fetch the linked chapter from GitHub before citing it.
+
+- **V1**: Encoding and Sanitization — V1.2 Injection (L1), V1.3 Sanitization/SSRF (L2), V1.5 Deserialization (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x10-V1-Encoding-and-Sanitization.md)
+- **V2**: Validation and Business Logic — V2.2 Input validation (L1), V2.4 Anti-automation/rate limiting (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x11-V2-Validation-and-Business-Logic.md)
+- **V3**: Web Frontend Security — V3.2 XSS/DOM (L1), V3.3 Cookie setup (L1), V3.4 Security headers (L1), V3.5 CSRF/origin separation (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x12-V3-Web-Frontend-Security.md)
+- **V4**: API and Web Service — V4.1 Generic API (L1), V4.2 REST (L1), V4.3 GraphQL (L2), V4.4 WebSocket (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x13-V4-API-and-Web-Service.md)
+- **V5**: File Handling — V5.1 Upload (L1), V5.3 Execution prevention (L1), V5.6 SSRF (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x14-V5-File-Handling.md)
+- **V6**: Authentication — V6.2 Password security (L1), V6.3 General auth/MFA (L1), V6.4 Factor lifecycle (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x15-V6-Authentication.md)
+- **V7**: Session Management — V7.2 Fundamental session security (L1), V7.4 Session termination (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x16-V7-Session-Management.md)
+- **V8**: Authorization — V8.1 General access control (L1), V8.2 Operation-level (L1), V8.3 Data-level/IDOR (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x17-V8-Authorization.md)
+- **V9**: Self-contained Tokens — V9.1 Structure (L1), V9.2 Claims (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x18-V9-Self-contained-Tokens.md)
+- **V10**: OAuth and OIDC — V10.1 Client (L1), V10.2 Resource server (L1), V10.4 Auth server (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x19-V10-OAuth-and-OIDC.md)
+- **V11**: Cryptography — V11.3 Approved ciphers (L1), V11.4 Hashing/password storage (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x20-V11-Cryptography.md)
+- **V12**: Secure Communication — V12.1 TLS config (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x21-V12-Secure-Communication.md)
+- **V13**: Configuration — V13.2 Backend comms (L2), V13.3 Secret management (L2), V13.4 Info leakage/debug (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x22-V13-Configuration.md)
+- **V14**: Data Protection — V14.1 General (L1), V14.2 Client-side (L1), V14.3 PII (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x23-V14-Data-Protection.md)
+- **V15**: Secure Coding and Architecture — V15.1 Secure coding (L2), V15.4 Supply chain (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x24-V15-Secure-Coding-and-Architecture.md)
+- **V16**: Security Logging and Error Handling — V16.2 Logging (L2), V16.3 Security events (L2), V16.4 Log protection (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x25-V16-Security-Logging-and-Error-Handling.md)
+- **V17**: WebRTC — V17.1 Peer connections (L2), V17.2 Media streams (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x26-V17-WebRTC.md)
 
 ## Severity Mapping
 
