@@ -175,22 +175,22 @@ For each relevant ASVS category:
 **Always check for these (most common finds):**
 
 - **Injection** (V1.2): Raw SQL concatenation, OS command building with user input, LDAP injection, template injection
-- **XSS** (V3): `innerHTML`, `document.write`, `v-html`, `dangerouslySetInnerHTML`, unescaped template output, DOM manipulation with user data
-- **Hardcoded secrets** (V11.4): Passwords, API keys, tokens, connection strings in source code or config committed to VCS
-- **Missing CSRF protection** (V3): State-changing operations without anti-CSRF tokens
-- **Insecure session config** (V7): Missing `Secure`, `HttpOnly`, or `SameSite` flags on session cookies
-- **Missing rate limiting** (V2.2): Login, registration, password reset, and other sensitive endpoints without throttling
-- **Verbose errors** (V16.4): Stack traces, SQL errors, or internal details exposed to users
+- **XSS** (V3.2): `innerHTML`, `document.write`, `v-html`, `dangerouslySetInnerHTML`, unescaped template output, DOM manipulation with user data
+- **Hardcoded secrets** (V13.3): Passwords, API keys, tokens, connection strings in source code or config committed to VCS
+- **Missing CSRF protection** (V3.5): State-changing operations without anti-CSRF tokens or origin verification
+- **Insecure cookie config** (V3.3): Missing `Secure`, `HttpOnly`, or `SameSite` flags on session cookies
+- **Missing rate limiting** (V2.4): Login, registration, password reset, and other sensitive endpoints without throttling
+- **Information leakage** (V13.4): Stack traces, SQL errors, debug mode, or internal details exposed to users
 - **Missing auth checks** (V8): Endpoints accessible without authentication or authorization
-- **Insecure deserialization** (V1): Deserializing untrusted data without validation
-- **SSRF** (V5.6): Server-side requests built from user input without URL validation
+- **Insecure deserialization** (V1.5): Deserializing untrusted data without validation
+- **SSRF** (V1.3.6): Server-side requests built from user input without URL validation
 
 ### STEP 4: Configuration Review
 
-- **Security headers** (V13.4): CSP, X-Frame-Options, X-Content-Type-Options, Strict-Transport-Security, Permissions-Policy
+- **Security headers** (V3.4): CSP, X-Content-Type-Options, Strict-Transport-Security, Referrer-Policy, Cross-Origin-Opener-Policy
 - **TLS configuration** (V12): Minimum TLS 1.2, strong cipher suites, valid certificates
 - **Dependency vulnerabilities** (V13.2): Known CVEs in package manifests
-- **Debug/development settings** (V13): Debug mode, verbose logging, development endpoints in production config
+- **Debug/development settings** (V13.4): Debug mode, verbose logging, development endpoints in production config
 
 ## Finding Severity Levels
 
@@ -263,10 +263,10 @@ psi.ArgumentList.Add("output.pdf");
 
 | Category | Requirement | Status | Notes |
 |----------|-------------|--------|-------|
-| V6.1.1 | Password length >= 12 | FAIL | Only requires 8 chars |
-| V6.1.2 | Allow 64+ char passwords | PASS | |
-| V6.1.7 | Breach password check | FAIL | Not implemented |
-| V7.4.1 | Secure cookie flag | FAIL | Missing on session cookie |
+| V6.2.1 | Password length >= 8 (15 recommended) | FAIL | Only requires 6 chars |
+| V6.2.9 | Allow 64+ char passwords | PASS | |
+| V6.2.12 | Breach password check | FAIL | Not implemented |
+| V3.3.1 | Secure cookie flag | FAIL | Missing on session cookie |
 | ... | ... | ... | ... |
 
 ## Recommendations Priority
