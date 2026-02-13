@@ -6,6 +6,17 @@
 
 AI-powered security auditor agent for [Claude Code](https://claude.com/claude-code) that tests your application against the [OWASP Application Security Verification Standard (ASVS) 5.0](https://github.com/OWASP/ASVS/tree/v5.0.0).
 
+## Disclaimer
+
+> **This tool is AI-powered and provided as-is with no warranty.** It is intended as a development aid, not a certified security assessment. You should be aware that:
+>
+> - **AI can and will make mistakes.** Findings may be incorrect, incomplete, or misattributed. Always verify results against the [ASVS specification](https://github.com/OWASP/ASVS/tree/v5.0.0) and your own expertise.
+> - **This is not a substitute for professional security testing.** Use it to complement — not replace — manual code reviews, penetration testing, and formal compliance audits.
+> - **No liability is accepted** for any security incidents, data breaches, compliance failures, or other damages arising from reliance on this tool's output. See [LICENSE](LICENSE).
+> - **You are responsible** for validating all findings and remediation guidance before applying changes to your codebase.
+>
+> If your application handles sensitive data, financial transactions, healthcare records, or other regulated information, engage qualified security professionals.
+
 ## What It Does
 
 - Scans your codebase for security vulnerabilities
@@ -127,10 +138,11 @@ Other languages are supported via general pattern matching — contributions for
 
 ## Limitations
 
-- **Static analysis only** — the agent reads source code, it doesn't execute or probe the running application
-- **LLM-dependent** — findings depend on the model's ability to understand code; complex vulnerabilities may be missed
-- **Not a replacement for professional pentesting** — use this as a complement to manual security reviews, not a substitute
+- **Static analysis only** — the agent reads source code; it doesn't execute, fuzz, or probe the running application
+- **LLM-dependent** — findings depend on the model's reasoning ability; complex multi-step vulnerabilities or logic flaws may be missed
+- **False positives and negatives** — AI may misidentify safe code as vulnerable or miss genuine issues; always verify findings manually
 - **Prompt size vs. accuracy tradeoff** — the full ASVS 5.0 spec (345 requirements) is not embedded; the agent may need to fetch chapter sources for precise requirement text
+- **Not a compliance certification** — a passing scan does not constitute ASVS compliance; formal assessment requires qualified auditors
 
 ## Contributing
 
