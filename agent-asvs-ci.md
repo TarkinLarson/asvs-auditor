@@ -34,7 +34,7 @@ Use the exact requirement ID (e.g., V1.2.5) in every finding. If unsure of the e
 - **V12**: Secure Communication — V12.1 TLS config (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x21-V12-Secure-Communication.md)
 - **V13**: Configuration — V13.2 Backend comms (L2), V13.3 Secret management (L2), V13.4 Info leakage/debug (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x22-V13-Configuration.md)
 - **V14**: Data Protection — V14.1 General (L1), V14.2 Client-side (L1), V14.3 PII (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x23-V14-Data-Protection.md)
-- **V15**: Secure Coding and Architecture — V15.1 Secure coding (L2), V15.4 Supply chain (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x24-V15-Secure-Coding-and-Architecture.md)
+- **V15**: Secure Coding and Architecture — V15.1 Secure coding (L2), V15.4 Supply chain: check manifest files for floating ranges, lockfiles committed, dependabot/renovate config present (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x24-V15-Secure-Coding-and-Architecture.md)
 - **V16**: Security Logging and Error Handling — V16.2 Logging (L2), V16.3 Security events (L2), V16.4 Log protection (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x25-V16-Security-Logging-and-Error-Handling.md)
 - **V17**: WebRTC — V17.1 Peer connections (L2), V17.2 Media streams (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x26-V17-WebRTC.md)
 
@@ -54,7 +54,8 @@ Use the exact requirement ID (e.g., V1.2.5) in every finding. If unsure of the e
 - Adapt all subsequent searches to the detected stack
 
 ### Step 2: Vulnerability Pattern Scanning
-For each detected language, search for:
+
+**Issue all searches in parallel** — fire all Grep/Glob calls simultaneously, not sequentially. For each detected language, search for:
 - **Injection** (V1.2): SQL concatenation, OS commands, template injection, LDAP injection
 - **XSS** (V3.2): innerHTML, document.write, v-html, dangerouslySetInnerHTML, unescaped output
 - **Hardcoded secrets** (V13.3): passwords, API keys, tokens, connection strings in source
@@ -72,6 +73,7 @@ For each detected language, search for:
 - TLS configuration (V12)
 - Dependency vulnerabilities (V13.2)
 - Debug/development settings (V13.4)
+- **Supply chain** (V15.4): lockfiles present and committed, no floating version ranges in manifests, automated update policy (dependabot.yml / renovate.json)
 
 ## OUTPUT FORMAT — STRICT JSON SCHEMA
 
@@ -113,6 +115,7 @@ You MUST output ONLY this JSON structure. No text before or after.
       "impact": "What an attacker could do with this vulnerability",
       "remediation": "Specific fix with code example in the correct language",
       "cwe_id": "CWE-78",
+      "confidence": "high|medium|low",
       "references": [
         "https://cheatsheetseries.owasp.org/relevant-page"
       ]
@@ -143,13 +146,14 @@ You MUST output ONLY this JSON structure. No text before or after.
 5. **Include code_snippet** — Show the actual vulnerable code
 6. **Be specific in remediation** — Show fixed code in the correct language, not just "use parameterized queries"
 7. **Include languages_detected and frameworks_detected** in scan metadata
+8. **Set confidence** per finding: `high` = clear vulnerable pattern with no defensive code visible, `medium` = likely vulnerable but context-dependent, `low` = pattern present but may be false positive requiring manual review
 
 ## Example Output
 
 ```json
 {
   "scan_metadata": {
-    "timestamp": "2025-12-04T10:30:00Z",
+    "timestamp": "2026-03-05T10:30:00Z",
     "asvs_version": "5.0",
     "asvs_level": "L2",
     "scanner": "asvs-auditor-ci",
@@ -182,6 +186,7 @@ You MUST output ONLY this JSON structure. No text before or after.
       "impact": "Attacker can execute arbitrary OS commands on the server, leading to full system compromise.",
       "remediation": "Use ProcessStartInfo with ArgumentList (no shell):\nvar psi = new ProcessStartInfo(\"wkhtmltopdf\") { UseShellExecute = false };\npsi.ArgumentList.Add(validatedUrl);\npsi.ArgumentList.Add(\"output.pdf\");",
       "cwe_id": "CWE-78",
+      "confidence": "high",
       "references": [
         "https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html"
       ]
@@ -202,6 +207,7 @@ You MUST output ONLY this JSON structure. No text before or after.
       "impact": "Session tokens can be intercepted on non-HTTPS connections, enabling session hijacking.",
       "remediation": "Set options.Cookie.SecurePolicy = CookieSecurePolicy.Always;",
       "cwe_id": "CWE-614",
+      "confidence": "high",
       "references": [
         "https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html"
       ]
@@ -222,6 +228,7 @@ You MUST output ONLY this JSON structure. No text before or after.
       "impact": "Attackers can gather internal application structure, file paths, and error details to aid further attacks.",
       "remediation": "Set DetailedErrors to false and LogLevel to Warning or higher in production:\n\"DetailedErrors\": false,\n\"Logging\": { \"LogLevel\": { \"Default\": \"Warning\" } }",
       "cwe_id": "CWE-215",
+      "confidence": "medium",
       "references": [
         "https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html"
       ]

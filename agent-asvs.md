@@ -211,6 +211,11 @@ When citing a requirement, use the exact ID (e.g., V1.2.5) and verify the descri
 - **V15.2** Memory Safety — bounds checking, use-after-free prevention (L2)
 - **V15.3** Concurrency — race conditions, TOCTOU prevention (L2–L3)
 - **V15.4** Supply Chain Integrity — dependency provenance, SBOM (L2–L3)
+  - Check manifest files (`package.json`, `*.csproj`, `go.mod`, `requirements.txt`, `Gemfile`, `pom.xml`) for floating version ranges (`^`, `~`, `>=`, `*`) instead of pinned versions
+  - Check lockfiles (`package-lock.json`, `yarn.lock`, `go.sum`, `Pipfile.lock`, `Gemfile.lock`) exist and are committed alongside their manifests
+  - Check for a supply chain update policy: `.github/dependabot.yml`, `renovate.json`, or equivalent
+  - Check for use of `npm install --ignore-scripts` or `--no-scripts` protections in CI
+  - Flag absence of lockfiles as a finding — floating deps are an active supply chain risk
 
 ### V16: Security Logging and Error Handling
 [Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x25-V16-Security-Logging-and-Error-Handling.md)
@@ -235,7 +240,7 @@ Understand the codebase before scanning. Adapt to the languages and frameworks p
 
 1. **Map the structure** — identify source directories, entry points, configuration files
 2. **Identify the stack** — languages, frameworks, ORMs, auth libraries, template engines
-3. **Find security-critical code**:
+3. **Find security-critical code** — issue all of the following searches **in parallel** (do not wait for one before starting the next):
    - Authentication and session management
    - Authorization and access control
    - Input handling and database queries
@@ -255,15 +260,19 @@ Adapt your search patterns to the detected stack. For example:
 
 ### STEP 2: Category-by-Category Review
 
-For each relevant ASVS category:
+**Run all category searches in parallel** — issue Grep/Glob calls for multiple ASVS chapters simultaneously rather than sequentially. For each relevant ASVS category:
 1. Identify code that handles that security domain
 2. Check against specific ASVS 5.0 requirements
 3. Document violations with code evidence
 4. Assess severity based on ASVS level (L1/L2/L3)
 
+> **Large codebases (>200 files)**: Use the Agent tool to delegate chapter groups to sub-agents running in parallel. For example: spawn one sub-agent to scan V1–V5 (injection, file handling), another for V6–V8 (auth, session, authz), another for V9–V13 (tokens, crypto, config). Merge findings into the final report.
+
 ### STEP 3: Common Vulnerability Patterns
 
-**Always check for these (most common finds):**
+**Fire all pattern searches simultaneously** — do not search for injection, then XSS, then secrets in sequence. Issue all Grep calls in a single parallel batch:
+
+**Most common finds:**
 
 - **Injection** (V1.2): Raw SQL concatenation, OS command building with user input, LDAP injection, template injection
 - **XSS** (V3.2): `innerHTML`, `document.write`, `v-html`, `dangerouslySetInnerHTML`, unescaped template output, DOM manipulation with user data
@@ -282,6 +291,7 @@ For each relevant ASVS category:
 - **TLS configuration** (V12): Minimum TLS 1.2, strong cipher suites, valid certificates
 - **Dependency vulnerabilities** (V13.2): Known CVEs in package manifests
 - **Debug/development settings** (V13.4): Debug mode, verbose logging, development endpoints in production config
+- **Supply chain** (V15.4): Lockfiles committed and present, no floating version ranges, automated update policy configured
 
 ## Finding Severity Levels
 
@@ -370,11 +380,12 @@ psi.ArgumentList.Add("output.pdf");
 
 ## Automatic Fail Triggers
 
-### Signs of Fantasy Security
-- "No vulnerabilities found" — impossible on first review
+### Signs of Fabricated Findings
 - Claims of 100% ASVS compliance without evidence
 - Security findings without code references
 - Theoretical vulnerabilities with no proof
+
+**Important**: "No vulnerabilities found" is not an automatic fail if you have genuinely checked all relevant categories and the code is clean. The goal is accuracy — neither fabricating findings nor suppressing real ones. Report what the evidence supports.
 
 ### Red Flags in Code
 - Raw SQL/query concatenation with user input
