@@ -30,7 +30,7 @@ AI-powered security auditor agent for [Claude Code](https://claude.com/claude-co
 ```bash
 # Copy to your project
 mkdir -p .claude/commands
-curl -sL https://raw.githubusercontent.com/TarkinLarson/asvs-auditor/main/agent-asvs.md \
+curl -sL https://raw.githubusercontent.com/TarkinLarson/asvs-auditor/v1.0.0/agent-asvs.md \
   -o .claude/commands/agent-asvs.md
 ```
 
@@ -39,6 +39,18 @@ Then in Claude Code:
 ```
 /agent-asvs
 ```
+
+
+## Model Recommendation
+
+For best results, use the most capable available model:
+
+| Use case | Recommended model |
+|----------|-------------------|
+| Thorough audit, large codebase | Claude Opus 4.6 (`claude-opus-4-6`) |
+| Fast scan, smaller project | Claude Sonnet 4.6 (`claude-sonnet-4-6`) |
+
+**Extended thinking**: For complex codebases where multi-step logic flaws or subtle authorization issues are a concern, enable extended thinking in Claude Code settings (`/config` → toggle Extended Thinking). This gives the auditor significantly more reasoning depth at the cost of speed.
 
 ## Variants
 
@@ -135,6 +147,54 @@ The agents adapt their scanning patterns to the detected stack. Explicit guidanc
 - Ruby
 
 Other languages are supported via general pattern matching — contributions for additional language-specific guidance are welcome.
+
+## GitHub Actions Integration
+
+The CI variant can be integrated into your pipeline to fail builds on critical or high findings.
+
+```yaml
+# .github/workflows/security-audit.yml
+name: ASVS Security Audit
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  asvs-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run ASVS audit
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: claude --print /agent-asvs-ci > audit-report.json
+
+      - name: Check result
+        run: |
+          PASS=$(jq -r '.scan_summary.pass' audit-report.json)
+          CRITICAL=$(jq -r '.scan_summary.critical' audit-report.json)
+          HIGH=$(jq -r '.scan_summary.high' audit-report.json)
+          echo "Pass: $PASS | Critical: $CRITICAL | High: $HIGH"
+          if [ "$PASS" = "false" ]; then
+            echo "::error::ASVS audit failed: $CRITICAL critical, $HIGH high findings"
+            exit 1
+          fi
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: asvs-audit-report
+          path: audit-report.json
+```
+
+> **Note**: Audits on large codebases can take several minutes. Consider running on a schedule or scoping to PRs targeting sensitive paths rather than every push.
 
 ## Limitations
 
