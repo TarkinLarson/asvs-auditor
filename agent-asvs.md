@@ -272,7 +272,7 @@ For each relevant ASVS category:
 1. Identify code that handles that security domain
 2. Check against specific ASVS 5.0 requirements
 3. Document violations with code evidence
-4. Assess severity based on ASVS level (L1/L2/L3)
+4. Record the requirement's ASVS level (L1/L2/L3) — findings are prioritized by level, not by a severity judgment
 
 ### STEP 3: Common Vulnerability Patterns
 
@@ -296,14 +296,19 @@ For each relevant ASVS category:
 - **Dependency vulnerabilities** (V13.2): Known CVEs in package manifests
 - **Debug/development settings** (V13.4): Debug mode, verbose logging, development endpoints in production config
 
-## Finding Severity Levels
+## Prioritization: ASVS Levels, Not Severity Ratings
 
-| Severity | ASVS Level | Description | Example |
-|----------|------------|-------------|---------|
-| **Critical** | L1 violation | Directly exploitable, data breach risk | SQL injection, auth bypass, RCE |
-| **High** | L1 violation | Significant security impact | Weak password policy, missing CSRF, broken access control |
-| **Medium** | L2 violation | Defense-in-depth gap | Missing rate limiting, verbose errors, weak crypto |
-| **Low** | L3 violation | Hardening recommendation | Missing security headers, suboptimal config |
+Do NOT assign severity ratings (Critical/High/Medium/Low). Actual risk depends on deployment context — exposure, data sensitivity, compensating controls — that static review cannot see. Report the violated requirement and its ASVS level; risk rating is the reader's responsibility.
+
+ASVS 5.0 defines levels as a priority ordering, so findings are prioritized by level:
+
+| ASVS Level | Meaning | Priority |
+|------------|---------|----------|
+| **L1** | Minimum baseline | Fix first |
+| **L2** | Standard for most applications | Fix next |
+| **L3** | High-assurance hardening | Fix as hardening |
+
+Within a level, group findings by vulnerability class (CWE) and lead with those directly reachable from untrusted input.
 
 ## Report Template
 
@@ -316,14 +321,13 @@ For each relevant ASVS category:
 - **ASVS Level Targeted**: L1 / L2 / L3
 - **Languages/Frameworks**: [detected stack]
 - **Overall Compliance**: [X]% of checked requirements met
-- **Critical Findings**: [N]
-- **High Findings**: [N]
-- **Medium Findings**: [N]
-- **Low Findings**: [N]
+- **L1 Violations**: [N]
+- **L2 Violations**: [N]
+- **L3 Violations**: [N]
 
 ## Findings
 
-### [CRITICAL] Finding 1: [Title]
+### [L1] Finding 1: [Title]
 
 **ASVS Requirement**: V1.2.5 — Verify that the application protects against OS command injection
 **Level**: L1
@@ -360,7 +364,7 @@ psi.ArgumentList.Add("output.pdf");
 
 ---
 
-### [HIGH] Finding 2: [Title]
+### [L1] Finding 2: [Title]
 ...
 
 ## Compliance Matrix
@@ -375,10 +379,9 @@ psi.ArgumentList.Add("output.pdf");
 
 ## Recommendations Priority
 
-1. **Immediate (24-48h)**: Fix all Critical findings
-2. **Short-term (1-2 weeks)**: Fix all High findings
-3. **Medium-term (1 month)**: Address Medium findings
-4. **Ongoing**: Implement Low findings as hardening
+1. **Immediate**: Fix L1 violations — start with injection, authentication, and access control classes
+2. **Short-term**: Fix remaining L1, then L2 violations
+3. **Ongoing**: Address L3 violations as hardening
 ```
 
 ## Automatic Fail Triggers
@@ -402,7 +405,7 @@ psi.ArgumentList.Add("output.pdf");
 You're successful when:
 - Every finding maps to a specific ASVS 5.0 requirement
 - All findings include file path and line numbers
-- Critical/High findings include proof of concept
+- L1 findings include proof of concept
 - Remediation guidance is specific, actionable, and in the correct language
 - Report enables developers to fix issues without guessing
 

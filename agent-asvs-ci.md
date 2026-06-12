@@ -38,14 +38,13 @@ Use the exact requirement ID (e.g., V1.2.5) in every finding. If unsure of the e
 - **V16**: Security Logging and Error Handling — V16.2 Logging (L2), V16.3 Security events (L2), V16.4 Log protection (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x25-V16-Security-Logging-and-Error-Handling.md)
 - **V17**: WebRTC — V17.1 Peer connections (L2), V17.2 Media streams (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x26-V17-WebRTC.md)
 
-## Severity Mapping
+## Target Level and Gating
 
-| Severity | ASVS Level | Criteria |
-|----------|------------|----------|
-| critical | L1 violation | Directly exploitable, immediate data breach risk |
-| high | L1 violation | Significant security impact, auth/authz bypass |
-| medium | L2 violation | Defense-in-depth gap, requires chaining |
-| low | L3 violation | Hardening recommendation |
+The scan targets an ASVS level — default **L2** unless the user specifies otherwise.
+
+- Check and report violations of all requirements **at or below** the target level (L1 only if targeting L1; L1+L2 if targeting L2; everything if L3).
+- `pass` is `true` only when there are zero violations at or below the target level.
+- Do NOT assign severity ratings (critical/high/medium/low). Each finding carries the violated requirement's ASVS level; risk rating is the consuming pipeline's responsibility — actual risk depends on deployment context this scan cannot see.
 
 ## Scan Process
 
@@ -90,16 +89,14 @@ You MUST output ONLY this JSON structure. No text before or after.
   "scan_summary": {
     "files_scanned": 0,
     "total_findings": 0,
-    "critical": 0,
-    "high": 0,
-    "medium": 0,
-    "low": 0,
+    "l1_violations": 0,
+    "l2_violations": 0,
+    "l3_violations": 0,
     "pass": false
   },
   "findings": [
     {
       "id": "ASVS-001",
-      "severity": "critical|high|medium|low",
       "asvs_requirement": "V1.2.5",
       "asvs_title": "Verify that the application protects against OS command injection",
       "asvs_level": "L1",
@@ -139,7 +136,7 @@ You MUST output ONLY this JSON structure. No text before or after.
 1. **NEVER output anything except JSON** — No "Here's the report:" or explanations
 2. **ALWAYS include file and line number** — If you can't find the exact line, don't report it
 3. **ALWAYS map to ASVS 5.0 requirement** — Use the VX.Y.Z format
-4. **Set pass to false** if any critical or high findings exist
+4. **Set pass to false** if any finding violates a requirement at or below the target ASVS level
 5. **Include code_snippet** — Show the actual vulnerable code
 6. **Be specific in remediation** — Show fixed code in the correct language, not just "use parameterized queries"
 7. **Include languages_detected and frameworks_detected** in scan metadata
@@ -160,16 +157,14 @@ You MUST output ONLY this JSON structure. No text before or after.
   "scan_summary": {
     "files_scanned": 47,
     "total_findings": 3,
-    "critical": 1,
-    "high": 1,
-    "medium": 1,
-    "low": 0,
+    "l1_violations": 2,
+    "l2_violations": 1,
+    "l3_violations": 0,
     "pass": false
   },
   "findings": [
     {
       "id": "ASVS-001",
-      "severity": "critical",
       "asvs_requirement": "V1.2.5",
       "asvs_title": "OS Command Injection Prevention",
       "asvs_level": "L1",
@@ -189,7 +184,6 @@ You MUST output ONLY this JSON structure. No text before or after.
     },
     {
       "id": "ASVS-002",
-      "severity": "high",
       "asvs_requirement": "V3.3.1",
       "asvs_title": "Cookie Secure attribute",
       "asvs_level": "L1",
@@ -209,7 +203,6 @@ You MUST output ONLY this JSON structure. No text before or after.
     },
     {
       "id": "ASVS-003",
-      "severity": "medium",
       "asvs_requirement": "V13.4.2",
       "asvs_title": "Debug modes disabled in production",
       "asvs_level": "L2",
@@ -265,10 +258,9 @@ If you cannot scan properly, output:
   "scan_summary": {
     "files_scanned": 0,
     "total_findings": 0,
-    "critical": 0,
-    "high": 0,
-    "medium": 0,
-    "low": 0,
+    "l1_violations": 0,
+    "l2_violations": 0,
+    "l3_violations": 0,
     "pass": false,
     "error": "Description of what went wrong"
   },

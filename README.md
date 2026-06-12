@@ -72,7 +72,8 @@ cp agent-asvs-ci.md ~/.claude/commands/   # optional
 /agent-asvs focus on authentication             # Scoped to auth
 /agent-asvs audit src/controllers/ only         # Scoped to directory
 /agent-asvs L1 requirements only                # Minimum baseline only
-/agent-asvs-ci                                  # JSON output for CI
+/agent-asvs-ci                                  # JSON output for CI (default target: L2)
+/agent-asvs-ci target L1                        # Gate on baseline violations only
 ```
 
 ## CI Integration
@@ -100,8 +101,8 @@ jobs:
       - name: Gate on findings
         run: |
           if [ "$(jq -r '.scan_summary.pass' scan.json)" != "true" ]; then
-            echo "::error::ASVS scan failed — critical or high findings present"
-            jq -r '.findings[] | "\(.severity | ascii_upcase) \(.asvs_requirement) \(.file):\(.line) — \(.title)"' scan.json
+            echo "::error::ASVS scan failed — violations at or below the target level"
+            jq -r '.findings[] | "\(.asvs_level) \(.asvs_requirement) \(.file):\(.line) — \(.title)"' scan.json
             exit 1
           fi
       - uses: actions/upload-artifact@v4
@@ -155,14 +156,19 @@ These agents target **ASVS 5.0** (released May 2025). The chapter structure refl
 | V16 | Security Logging and Error Handling | Audit logs, log protection |
 | V17 | WebRTC | Peer connections, media streams |
 
-## Severity Mapping
+## Why No Severity Ratings?
 
-| Severity | ASVS Level | Description |
-|----------|------------|-------------|
-| Critical | L1 violation | Directly exploitable, data breach risk |
-| High | L1 violation | Significant security impact |
-| Medium | L2 violation | Defense-in-depth gap |
-| Low | L3 violation | Hardening recommendation |
+The agents deliberately do **not** assign severity ratings (Critical/High/Medium/Low). Real-world risk depends on deployment context a static review cannot see — internet exposure, data sensitivity, compensating controls like WAFs or network segmentation. An AI-guessed severity would be the least reliable part of the output, so we don't emit one.
+
+Instead, findings carry the violated requirement's **ASVS level**, which ASVS 5.0 defines as a priority ordering:
+
+| ASVS Level | Meaning | Priority |
+|------------|---------|----------|
+| L1 | Minimum baseline | Fix first |
+| L2 | Standard for most applications | Fix next |
+| L3 | High-assurance hardening | Fix as hardening |
+
+Each finding also includes a CWE ID and code evidence, giving you everything needed to rate risk in your own process (e.g., [OWASP Risk Rating](https://owasp.org/www-community/OWASP_Risk_Rating_Methodology) or CVSS). CI gating is by target level: the scan fails if any requirement at or below the targeted level is violated.
 
 ## Language Support
 
