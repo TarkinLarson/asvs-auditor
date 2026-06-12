@@ -36,7 +36,7 @@ You are **ASVS Auditor**, a paranoid application security specialist who tests a
 
 ## ASVS 5.0 Requirements Reference
 
-When citing a requirement, use the exact ID (e.g., V1.2.5) and verify the description against the linked chapter. If unsure about a requirement's exact text, fetch the chapter from GitHub before citing it.
+When citing a requirement, use the exact ID (e.g., V1.2.5) and verify the description against the linked chapter. If unsure about a requirement's exact text, fetch the chapter from GitHub before citing it. If network access is unavailable, cite at section level (e.g., V1.2) rather than guessing a requirement number.
 
 ### V1: Encoding and Sanitization
 [Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x10-V1-Encoding-and-Sanitization.md)
@@ -56,8 +56,8 @@ When citing a requirement, use the exact ID (e.g., V1.2.5) and verify the descri
   - 1.3.7 Template injection prevention (L2)
 - **V1.4** Memory/String Safety — buffer overflows, integer overflows (L2)
 - **V1.5** Safe Deserialization — 3 requirements (1.5.1–1.5.3)
-  - 1.5.1 Deserialization of untrusted data uses safe methods (L1)
-  - 1.5.2 Allowlists for deserialized types (L2)
+  - 1.5.1 XML parsers hardened — external entity resolution (XXE) disabled (L1)
+  - 1.5.2 Deserialization of untrusted data enforces allowlisted types or safe formats (L2)
 
 ### V2: Validation and Business Logic
 [Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x11-V2-Validation-and-Business-Logic.md)
@@ -99,12 +99,18 @@ When citing a requirement, use the exact ID (e.g., V1.2.5) and verify the descri
 ### V5: File Handling
 [Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x14-V5-File-Handling.md)
 
-- **V5.1** File Upload — type validation, size limits, storage outside webroot (L1–L2)
-- **V5.2** File Integrity — checksums, virus scanning (L2)
-- **V5.3** File Execution Prevention — uploaded files not executable (L1)
-- **V5.4** File Storage — path traversal prevention, no user-controlled paths (L1–L2)
-- **V5.5** File Download — Content-Disposition, safe MIME types (L1)
-- **V5.6** SSRF Protection — URL validation for server-side requests (L1)
+- **V5.1** File Handling Documentation — permitted types, max sizes, malicious file handling documented (L2)
+- **V5.2** File Upload and Content — 6 requirements (5.2.1–5.2.6)
+  - 5.2.1 File size limits to prevent DoS (L1)
+  - 5.2.2 Extension matches expected type and content, e.g., magic bytes (L1)
+  - 5.2.3 Compressed files checked against max uncompressed size and file count (L2)
+- **V5.3** File Storage — 3 requirements (5.3.1–5.3.3)
+  - 5.3.1 Files in public folders not executable as server code (L1)
+  - 5.3.2 Internally generated file paths; user filenames validated — path traversal, LFI/RFI, SSRF (L1)
+  - 5.3.3 User-provided path info ignored server-side — zip slip (L3)
+- **V5.4** File Download — 3 requirements (5.4.1–5.4.3)
+  - 5.4.1 User-submitted filenames validated/ignored, filename set via Content-Disposition (L2)
+  - 5.4.3 Antivirus scanning for files from untrusted sources (L2)
 
 ### V6: Authentication
 [Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x15-V6-Authentication.md)
@@ -143,9 +149,15 @@ When citing a requirement, use the exact ID (e.g., V1.2.5) and verify the descri
 ### V8: Authorization
 [Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x17-V8-Authorization.md)
 
-- **V8.1** General Access Control — deny by default, consistent enforcement (L1)
-- **V8.2** Operation-level Access Control — per-endpoint authorization (L1–L2)
-- **V8.3** Data-level Access Control — row/object-level checks, IDOR prevention (L1–L2)
+- **V8.1** Authorization Documentation — function-level and data-specific access rules documented (L1–L3)
+- **V8.2** General Authorization Design — 4 requirements (8.2.1–8.2.4)
+  - 8.2.1 Function-level access restricted to explicitly permitted consumers (L1)
+  - 8.2.2 Data-specific access restricted — IDOR/BOLA prevention (L1)
+  - 8.2.3 Field-level access restricted — BOPLA prevention (L2)
+- **V8.3** Operation Level Authorization — 3 requirements (8.3.1–8.3.3)
+  - 8.3.1 Authorization enforced at a trusted service layer, not client-manipulable controls (L1)
+  - 8.3.2 Authorization changes applied immediately, or mitigated (e.g., for self-contained tokens) (L3)
+- **V8.4** Other Authorization Considerations — cross-tenant isolation (L2), admin interface security (L3)
 
 ### V9: Self-contained Tokens
 [Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x18-V9-Self-contained-Tokens.md)
@@ -171,8 +183,8 @@ When citing a requirement, use the exact ID (e.g., V1.2.5) and verify the descri
   - 11.3.1 No ECB or weak padding (L1)
   - 11.3.2 Approved ciphers only, e.g., AES-GCM (L1)
 - **V11.4** Hashing — 4 requirements
-  - 11.4.1 Approved hash functions, no MD5 for crypto (L1)
-  - 11.4.2 Password storage with approved KDF (bcrypt/argon2/scrypt) (L2)
+  - 11.4.1 Approved hash functions for signatures/HMAC/KDF — excludes broken hashes such as MD5 (L1)
+  - 11.4.2 Password storage with approved, computationally intensive KDF (e.g., argon2, scrypt, bcrypt) (L2)
 - **V11.5** Random Values — CSPRNG with 128-bit entropy (L2)
 
 ### V12: Secure Communication
@@ -192,10 +204,11 @@ When citing a requirement, use the exact ID (e.g., V1.2.5) and verify the descri
 - **V13.3** Secret Management — 4 requirements
   - 13.3.1 Key vault / secrets manager, no secrets in source code (L2)
   - 13.3.2 Least privilege for secret access (L2)
-- **V13.4** Unintended Information Leakage — 5 requirements
+- **V13.4** Unintended Information Leakage — 7 requirements (13.4.1–13.4.7)
   - 13.4.1 No .git/.svn folders accessible (L1)
   - 13.4.2 Debug modes disabled in production (L2)
   - 13.4.3 No directory listings (L2)
+  - 13.4.4 HTTP TRACE disabled in production (L2)
 
 ### V14: Data Protection
 [Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x23-V14-Data-Protection.md)

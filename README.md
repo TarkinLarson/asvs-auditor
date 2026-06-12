@@ -75,6 +75,48 @@ cp agent-asvs-ci.md ~/.claude/commands/   # optional
 /agent-asvs-ci                                  # JSON output for CI
 ```
 
+## CI Integration
+
+The CI variant outputs strict JSON with a `scan_summary.pass` boolean. Run Claude Code headless and gate the pipeline on it:
+
+```yaml
+# .github/workflows/asvs-scan.yml
+name: ASVS Scan
+on: [pull_request]
+jobs:
+  asvs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run ASVS auditor
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          claude -p "/agent-asvs-ci" --permission-mode acceptEdits > scan-raw.txt
+          # Strip any markdown fencing the model may emit around the JSON
+          sed -n '/^{/,/^}/p' scan-raw.txt > scan.json
+          jq . scan.json > /dev/null   # validate JSON
+      - name: Gate on findings
+        run: |
+          if [ "$(jq -r '.scan_summary.pass' scan.json)" != "true" ]; then
+            echo "::error::ASVS scan failed — critical or high findings present"
+            jq -r '.findings[] | "\(.severity | ascii_upcase) \(.asvs_requirement) \(.file):\(.line) — \(.title)"' scan.json
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: asvs-scan
+          path: scan.json
+```
+
+Notes:
+
+- The agent file must be present in the repo at `.claude/commands/agent-asvs-ci.md` for the slash command to resolve.
+- Model output may occasionally include markdown fences or preamble despite instructions — keep the extraction step defensive (the `sed` filter above) and treat unparseable output as a failed scan.
+- Restricted runners without outbound network access prevent the agent from verifying requirement text against the ASVS GitHub source; it is instructed to fall back to section-level citations in that case.
+
 ## How It Works
 
 1. **Reconnaissance** — maps the codebase, identifies languages and frameworks
