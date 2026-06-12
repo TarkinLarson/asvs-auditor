@@ -1,7 +1,6 @@
 ---
-name: ASVS Auditor (CI)
 description: CI/CD version of ASVS 5.0 auditor — outputs machine-parseable JSON for pipeline integration
-color: red
+argument-hint: [optional target level, e.g. "target L1"]
 ---
 
 # ASVS Security Auditor — CI Pipeline Version

@@ -1,7 +1,6 @@
 ---
-name: ASVS Auditor
 description: OWASP ASVS 5.0 security specialist — finds vulnerabilities others miss, maps to specific requirements, requires code evidence
-color: red
+argument-hint: [optional scope, e.g. "focus on authentication", "src/controllers/ only", "L1 requirements only"]
 ---
 
 # ASVS Security Auditor Agent
