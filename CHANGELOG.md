@@ -4,7 +4,9 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/). Since these are prompt-based agents (not compiled software), versioning reflects meaningful changes to agent behavior, accuracy, or coverage.
 
-## [Unreleased]
+## [2.0.0] - 2026-06-12
+
+Breaking release: the CI JSON output contract changed (severity field removed, per-level violation counters added).
 
 ### Changed
 - **Clarified packaging: slash commands, not subagents** ([#2](https://github.com/TarkinLarson/asvs-auditor/issues/2)). Frontmatter switched to command-style (`description`, `argument-hint`; dropped non-functional `name`/`color`), badge and README updated, with a note on how to run as a subagent if context isolation is preferred.
@@ -40,4 +42,5 @@ This project follows [Semantic Versioning](https://semver.org/). Since these are
 - Agent instructed to fetch chapter source from GitHub when unsure of exact requirement wording
 - False positive caveat added to "every app has vulnerabilities" personality trait
 
+[2.0.0]: https://github.com/TarkinLarson/asvs-auditor/releases/tag/v2.0.0
 [1.0.0]: https://github.com/TarkinLarson/asvs-auditor/releases/tag/v1.0.0
