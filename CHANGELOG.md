@@ -13,6 +13,7 @@ Breaking release: the CI JSON output contract changed (severity field removed, p
 - **Removed severity ratings entirely** ([#1](https://github.com/TarkinLarson/asvs-auditor/issues/1)). The previous Critical/High/Medium/Low model was derived mechanically from ASVS level, which measures verification depth, not risk — and AI-judged severity is unreliable without deployment context. Findings now carry only the violated requirement's ASVS level (a priority ordering per ASVS 5.0) plus CWE ID and evidence; risk rating is delegated to the consumer.
 - CI schema: `severity` field removed from findings; `scan_summary` counters are now `l1_violations`/`l2_violations`/`l3_violations`; `pass` is false when any requirement at or below the targeted ASVS level (default L2) is violated.
 - Interactive report: findings tagged by level (`[L1]`), executive summary counts per level, remediation priority ordered by level.
+- Consolidated the two CI workflow examples into one; the 1.1.0 example gated on the now-removed `critical`/`high` counters. The `confidence` field introduced in 1.1.0 is retained — finding confidence (is it real?) is orthogonal to severity (how risky?).
 
 ### Fixed
 - **V5 File Handling reference corrected in both agents** — previous reference listed six sections including nonexistent V5.5 and V5.6; actual ASVS 5.0 structure is V5.1 Documentation, V5.2 File Upload and Content, V5.3 File Storage, V5.4 File Download. File-context SSRF is requirement 5.3.2, not a "V5.6 SSRF" section.
@@ -26,6 +27,21 @@ Breaking release: the CI JSON output contract changed (severity field removed, p
 - CI integration example in README (headless invocation, JSON extraction, `pass` gating, artifact upload).
 - CI rule to take the scan timestamp from the system clock instead of guessing.
 - Offline fallback rule in both agents: cite at section level (VX.Y) when the ASVS source cannot be fetched.
+
+## [1.1.0] - 2026-03-05
+
+### Added
+- Parallel tool call instructions in both agents — reconnaissance and pattern scanning now explicitly instruct Claude to issue Grep/Glob calls simultaneously rather than sequentially, significantly reducing scan time
+- Sub-agent delegation guidance for large codebases (>200 files) — interactive agent can spawn parallel sub-agents per ASVS chapter group
+- `confidence` field in CI JSON schema (`high|medium|low`) per finding, with guidance on assignment — enables downstream tooling to filter likely false positives before failing pipelines
+- GitHub Actions workflow example in README for CI/CD integration
+- Model recommendation section in README (Opus 4.6 for thorough audits, Sonnet 4.6 for speed, extended thinking guidance)
+
+### Changed
+- V15.4 supply chain guidance expanded: now includes concrete checks for floating version ranges, lockfile presence, dependabot/renovate config, and `--ignore-scripts` usage
+- Step 4 configuration review now explicitly includes supply chain checks
+- "Signs of Fantasy Security" section renamed to "Signs of Fabricated Findings" and softened: "no vulnerabilities found" is no longer an automatic fail — accuracy is the goal, not quota-filling
+- curl install command in README pinned to `v1.0.0` tag (was `main`) for reproducibility
 
 ## [1.0.0] - 2026-02-13
 
@@ -42,5 +58,6 @@ Breaking release: the CI JSON output contract changed (severity field removed, p
 - Agent instructed to fetch chapter source from GitHub when unsure of exact requirement wording
 - False positive caveat added to "every app has vulnerabilities" personality trait
 
-[2.0.0]: https://github.com/TarkinLarson/asvs-auditor/releases/tag/v2.0.0
+[2.0.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v1.1.0...v2.0.0
+[1.1.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/TarkinLarson/asvs-auditor/releases/tag/v1.0.0

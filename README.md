@@ -30,7 +30,7 @@ AI-powered security auditor agent for [Claude Code](https://claude.com/claude-co
 ```bash
 # Copy to your project
 mkdir -p .claude/commands
-curl -sL https://raw.githubusercontent.com/TarkinLarson/asvs-auditor/main/agent-asvs.md \
+curl -sL https://raw.githubusercontent.com/TarkinLarson/asvs-auditor/v2.0.0/agent-asvs.md \
   -o .claude/commands/agent-asvs.md
 ```
 
@@ -39,6 +39,18 @@ Then in Claude Code:
 ```
 /agent-asvs
 ```
+
+
+## Model Recommendation
+
+For best results, use the most capable available model:
+
+| Use case | Recommended model |
+|----------|-------------------|
+| Thorough audit, large codebase | Claude Opus 4.6 (`claude-opus-4-6`) |
+| Fast scan, smaller project | Claude Sonnet 4.6 (`claude-sonnet-4-6`) |
+
+**Extended thinking**: For complex codebases where multi-step logic flaws or subtle authorization issues are a concern, enable extended thinking in Claude Code settings (`/config` → toggle Extended Thinking). This gives the auditor significantly more reasoning depth at the cost of speed.
 
 ## Variants
 
@@ -123,6 +135,7 @@ Notes:
 - The agent file must be present in the repo at `.claude/commands/agent-asvs-ci.md` for the slash command to resolve.
 - Model output may occasionally include markdown fences or preamble despite instructions — keep the extraction step defensive (the `sed` filter above) and treat unparseable output as a failed scan.
 - Restricted runners without outbound network access prevent the agent from verifying requirement text against the ASVS GitHub source; it is instructed to fall back to section-level citations in that case.
+- Audits on large codebases can take several minutes. Consider running on a schedule or scoping to PRs that touch sensitive paths rather than every push.
 
 ## How It Works
 
