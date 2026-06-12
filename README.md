@@ -2,7 +2,7 @@
 
 [![ASVS Version](https://img.shields.io/badge/ASVS-5.0-blue)](https://github.com/OWASP/ASVS/tree/v5.0.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Claude Code](https://img.shields.io/badge/Claude_Code-agent-purple)](https://claude.com/claude-code)
+[![Claude Code](https://img.shields.io/badge/Claude_Code-slash_command-purple)](https://claude.com/claude-code)
 
 AI-powered security auditor agent for [Claude Code](https://claude.com/claude-code) that tests your application against the [OWASP Application Security Verification Standard (ASVS) 5.0](https://github.com/OWASP/ASVS/tree/v5.0.0).
 
@@ -46,6 +46,12 @@ Then in Claude Code:
 |------|---------|--------|
 | [`agent-asvs.md`](agent-asvs.md) | Interactive auditor | Markdown report with findings, compliance matrix, and remediation |
 | [`agent-asvs-ci.md`](agent-asvs-ci.md) | CI/CD pipeline | Strict JSON for automation, exit code gating, and dashboards |
+
+### Commands, not subagents
+
+Both files are packaged as Claude Code **slash commands** — prompt files installed to `.claude/commands/` and invoked as `/agent-asvs`. The "agent" in the name refers to the auditor *persona* the prompt creates, not Claude Code's separate [subagent](https://docs.claude.com/en/docs/claude-code/sub-agents) feature (`.claude/agents/`).
+
+If you prefer an isolated context window for long scans of large codebases, the files also work as subagents: copy one to `.claude/agents/`, and add `name:` (e.g., `asvs-auditor`) to the frontmatter. The command form is the supported default — the CI workflow below depends on it.
 
 ## Installation
 

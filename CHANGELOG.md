@@ -7,6 +7,7 @@ This project follows [Semantic Versioning](https://semver.org/). Since these are
 ## [Unreleased]
 
 ### Changed
+- **Clarified packaging: slash commands, not subagents** ([#2](https://github.com/TarkinLarson/asvs-auditor/issues/2)). Frontmatter switched to command-style (`description`, `argument-hint`; dropped non-functional `name`/`color`), badge and README updated, with a note on how to run as a subagent if context isolation is preferred.
 - **Removed severity ratings entirely** ([#1](https://github.com/TarkinLarson/asvs-auditor/issues/1)). The previous Critical/High/Medium/Low model was derived mechanically from ASVS level, which measures verification depth, not risk — and AI-judged severity is unreliable without deployment context. Findings now carry only the violated requirement's ASVS level (a priority ordering per ASVS 5.0) plus CWE ID and evidence; risk rating is delegated to the consumer.
 - CI schema: `severity` field removed from findings; `scan_summary` counters are now `l1_violations`/`l2_violations`/`l3_violations`; `pass` is false when any requirement at or below the targeted ASVS level (default L2) is violated.
 - Interactive report: findings tagged by level (`[L1]`), executive summary counts per level, remediation priority ordered by level.
