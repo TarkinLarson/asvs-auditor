@@ -45,23 +45,37 @@ Audit against an ASVS level — default **L2** unless the user specifies otherwi
 
 Skip these by default. Findings here are noise, not risk:
 
-- **Vendored and third-party code**: `node_modules/`, `vendor/`, `packages/`, `bower_components/`, `site-packages/`
+- **Vendored and third-party code**: `node_modules/`, `vendor/`, `bower_components/`, `site-packages/`. Note `packages/` is the source root in pnpm/yarn-workspaces/Lerna/Nx monorepos — check for `workspaces` in `package.json` or a `pnpm-workspace.yaml` before treating it as vendored, and never exclude it when it holds first-party code.
+- Third-party **libraries committed by copy** (`wwwroot/lib/`, `static/js/vendor/`, minified bundles) are not code-reviewed, but their **versions remain in scope** for 15.2.1 and 15.2.4 — they carry real CVEs, appear in no manifest, and ship to users.
 - **Build output and generated code**: `dist/`, `build/`, `out/`, `bin/`, `obj/`, minified bundles, generated API clients, protobuf/OpenAPI output, `*.designer.cs`
-- Anything matched by `.gitignore` — a reasonable first approximation of "not our source"
+- Anything matched by `.gitignore`, **except** secret-bearing config present in the working tree (`.env`, `appsettings.*.json`, `local.settings.json`, `*.tfvars`, `*.pem`, `*.key`, `secrets/`) — these are gitignored in most repos and are the highest-yield secret targets, so they stay in scope
 
 Dependency manifests and lockfiles remain **in scope** — the supply chain requirements (15.1.2, 15.2.1) depend on reading them.
 
-**Test code and fixtures** (`test/`, `tests/`, `spec/`, `__tests__/`, `*.test.*`, `*_test.go`, fixture and seed data): report only what represents production risk — a real credential committed to the repository, or a test helper reachable from production code. A deliberately vulnerable fixture is not a finding. When you do report from test code, say so explicitly and lower the confidence.
+**Test code and fixtures** (`test/`, `tests/`, `spec/`, `__tests__/`, `*.test.*`, `*_test.go`): report only what represents production risk. A deliberately vulnerable fixture is not a finding, and a *pattern* found only in test code is capped at medium confidence. But a **verified credential** committed anywhere is a full-confidence finding, and **test scaffolding that ships or disables a production control** (test auth handlers, `WebApplicationFactory` overrides, development-environment defaults that survive a release build) is in scope at full confidence.
+
+**Seed, fixture and migration data are NOT excluded** (`db/seeds.*`, `*Seed*.*`, `fixtures/*.yml`, `docker-compose.yml`): default and shared accounts live there and ship to production — 6.3.2 (L1) depends on reading them.
 
 ## Evidence Standards
 
-### Reachability
+### Reachability — taint-flow requirements only
 
-A dangerous sink is not a finding until untrusted input can reach it. Before reporting, trace the path from an entry point — request parameter, header, cookie, path segment, uploaded file, queue message, or third-party response — to the sink.
+This rubric applies to requirements about untrusted input reaching a dangerous sink: **V1.2, V1.3, V1.5, V5.3, V8.2, V15.3**. It does **not** apply to configuration or absence findings — see below.
+
+Trace the path from an entry point — request parameter, header, cookie, path segment, uploaded file, queue message, or third-party response — to the sink.
 
 - Traced path from an untrusted entry point, no defensive code in between → `high` confidence
+- **Defensive code present but not appropriate to the sink's context, or bypassable** — HTML escaping applied to a SQL context, a permissive or anchorless regex, `parseInt`/`IsNullOrEmpty`/`[Required]` mistaken for sanitization, `addslashes` — → `high` or `medium`, naming the bypass. **Defence-present-but-wrong is a finding, not an exemption**; it is often the most valuable finding in an audit.
 - Sink present and the path is plausible but untraceable (crosses a boundary you cannot follow, or depends on runtime wiring) → `medium`
-- Sink fed only by constants, enum values, or data already validated upstream → **not a finding**
+- Sink fed only by constants or enum values, or by data provably validated with a control appropriate to the sink → **not a finding**
+
+### Configuration and absence findings
+
+For requirements with no taint path — cookie attributes (V3.3), headers (V3.4), TLS (V12), crypto choices (11.3, 11.4), debug settings (13.4), default accounts (6.3.2), missing controls — reachability is irrelevant and `high` confidence does **not** require a traced path:
+
+- The setting is present and demonstrably wrong, or the control is absent after an exhaustive search → `high`
+- The setting is ambiguous, environment-dependent, or the search could not be exhaustive → `medium`
+- The control may be enforced outside the codebase → `low`, flagged as not verifiable from source
 
 ### Secrets
 
@@ -88,9 +102,13 @@ Some requirements are violated by absence: no rate limiting, no CSRF protection,
 
 An absence finding still needs a file and line. "Missing X" plus the location of the code that should have X is verifiable; a finding with no location is not.
 
+**Documentation requirements** (15.1.1, 2.1.x, 5.1.x, 6.1.x, 7.1.x, 8.1.x, 11.1.x, 13.1.x, 16.1.x, and the 15.1.2 inventory/SBOM) ask whether a policy is *written down*, which source code cannot answer. Do not silently drop them and do not fabricate a location. Anchor to the documentation that should hold them — `README`, `SECURITY.md`, `docs/`, or the repository root when none exists — mark them `UNVERIFIABLE` at low confidence, and say where you looked. Reporting them as unverifiable preserves the information; omitting them hides a whole requirement class.
+
 ## Controls Enforced Outside the Code
 
-Security headers (V3.4), TLS configuration (V12), and rate limiting (V2.4) are routinely enforced at a reverse proxy, CDN, API gateway, or service mesh — invisible to source review.
+Security headers (V3.4), TLS configuration (V12), and rate limiting are routinely enforced at a reverse proxy, CDN, API gateway, or service mesh — invisible to source review.
+
+**Rate limiting has two distinct requirements — use the right one.** Throttling on authentication endpoints (login, registration, password reset) is **6.3.1 (L1)**, anti-stuffing and brute-force controls. General anti-automation on expensive or bulk-data endpoints is **2.4.1 (L2)**. The distinction changes the finding's priority, so do not default to one for both.
 
 - If infrastructure config is in the repository (nginx/Apache config, Kubernetes ingress, Terraform/Bicep/CloudFormation, `Dockerfile`, gateway or CDN config), scan it and report definitively.
 - If it is not, do **not** report absence as a confirmed violation. Report it as **not verifiable from source** at `low` confidence and name the infrastructure layer that might be satisfying the requirement.
@@ -386,7 +404,7 @@ Adapt your search patterns to the detected stack. For example:
 - **Hardcoded secrets** (V13.3): Passwords, API keys, tokens, connection strings in source code or config committed to VCS
 - **Missing CSRF protection** (V3.5): State-changing operations without anti-CSRF tokens or origin verification
 - **Insecure cookie config** (V3.3): Missing `Secure`, `HttpOnly`, or `SameSite` flags on session cookies
-- **Missing rate limiting** (V2.4): Login, registration, password reset, and other sensitive endpoints without throttling
+- **Missing rate limiting**: login, registration, password reset without throttling (**6.3.1**, L1); expensive or bulk-data endpoints without anti-automation (**2.4.1**, L2)
 - **Information leakage** (V13.4): Stack traces, SQL errors, debug mode, or internal details exposed to users
 - **Missing auth checks** (V8): Endpoints accessible without authentication or authorization
 - **Insecure deserialization** (V1.5): Deserializing untrusted data without validation
@@ -506,7 +524,16 @@ public async Task<IActionResult> Login(LoginRequest request)
 | V17 | WebRTC | N/A | No WebRTC code present |
 | ... | ... | ... | ... |
 
-Statuses: `PASS` (control located and verified), `FAIL` (violation with evidence), `N/A` (technology absent — give the reason), `UNVERIFIABLE` (control may be enforced outside the codebase). Omit requirements you did not check.
+Statuses: `PASS` (control located and verified), `FAIL` (violation with evidence), `N/A` (technology absent — give the reason), `UNVERIFIABLE` (control may be enforced outside the codebase, or is a documentation requirement). Omit requirements you did not check.
+
+Report compliance as a raw fraction (`passed / checked`) alongside the count of applicable requirements you did **not** check. A bare percentage of checked requirements rises as coverage falls, which rewards a lazy scan.
+
+## Hardening (Above Target Level)
+
+Requirements above the target level, listed separately so they never compete with the findings that need fixing. Same evidence standard, same format, shorter treatment.
+
+### [L3] 15.2.4: Transitive dependencies not verified against expected repository
+[evidence, then a one-line remediation]
 
 ## Recommendations Priority
 
@@ -540,7 +567,7 @@ You're successful when:
 - Every finding maps to a specific ASVS 5.0 requirement
 - All findings include file path and line numbers — including absence findings, anchored to where the control belongs
 - Every finding carries a confidence level, and every `high` confidence finding has a traced path from untrusted input
-- L1 findings include proof of concept
+- L1 *presence* findings include proof of concept; absence findings give the search evidence instead — never fabricate a PoC to satisfy this
 - Remediation guidance is specific, actionable, and in the correct language
 - The compliance matrix claims only what you checked, and every N/A has a stated reason
 - Report enables developers to fix issues without guessing

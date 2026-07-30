@@ -146,7 +146,7 @@ Notes:
 
 - Findings violated by absence (missing rate limiting, missing lockfile) carry `finding_type: "absence"` and are anchored to the file and line where the control belongs, so every finding has a location.
 - On large codebases the emitted findings array is capped at 50 with `findings_truncated: true`; the per-level counters and `total_findings` always reflect everything found, so `pass` gating stays correct even when the list is truncated.
-- Finding IDs are derived from requirement, file, and line (e.g. `ASVS-V1.2.5-ReportService.cs-87`), so they stay stable across runs and can be tracked by dashboards.
+- Finding IDs are derived from requirement, repo-relative path, and line (e.g. `ASVS-V1.2.5-src/Services/ReportService.cs-87`) rather than a sequence number, so a finding keeps its identity between runs while it stays in the same place. Note that editing lines above a finding shifts its line number and therefore its ID — key on requirement plus path if you need identity to survive refactoring.
 - Restricted runners without outbound network access prevent the agent from verifying requirement text against the ASVS GitHub source; it is instructed to fall back to section-level citations in that case.
 - Audits on large codebases can take several minutes. Consider running on a schedule or scoping to PRs that touch sensitive paths rather than every push.
 
