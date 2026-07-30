@@ -29,5 +29,5 @@ assignees: ''
 
 ## Agent Variant
 
-- [ ] `agent-asvs.md` (interactive)
-- [ ] `agent-asvs-ci.md` (CI/JSON)
+- [ ] `agent-asvs` (interactive)
+- [ ] `agent-asvs-ci` (CI/JSON)
