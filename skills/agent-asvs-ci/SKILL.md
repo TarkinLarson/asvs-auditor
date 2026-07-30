@@ -50,7 +50,10 @@ If the reference files are not present (only `SKILL.md` was installed), fetch th
 The scan targets an ASVS level — default **L2** unless the user specifies otherwise.
 
 - Check and report violations of all requirements **at or below** the target level (L1 only if targeting L1; L1+L2 if targeting L2; everything if L3).
-- `pass` is `true` only when there are zero violations at or below the target level.
+- Requirements **above** the target level may be reported, but never affect either `pass` field. `l3_violations` is the counter for them at the default L2 target.
+- `pass` is `true` when there are zero **verifiable** violations at or below the target level. Findings marked `not_verifiable_in_code: true` are excluded — the scanner cannot see a proxy, CDN, or gateway, and must not fail a build on a control it did not actually check.
+- `pass_including_unverifiable` is `true` only when there are zero violations at or below the target level **including** unverifiable ones. Gate on this instead if you want the strict reading, where anything the scanner could not confirm counts against you.
+- Both booleans are always emitted. When they differ, the gap is exactly the unverifiable findings, counted in `unverifiable_findings`.
 - Do NOT assign severity ratings (critical/high/medium/low). Each finding carries the violated requirement's ASVS level; risk rating is the consuming pipeline's responsibility — actual risk depends on deployment context this scan cannot see.
 
 ## Scope and Exclusions
@@ -116,7 +119,9 @@ Security headers (V3.4), TLS configuration (V12), and rate limiting are routinel
 - If infrastructure config is in the repository (nginx/Apache config, Kubernetes ingress, Terraform/Bicep/CloudFormation, `Dockerfile`, gateway or CDN config), scan it and report definitively.
 - If it is not, set `"confidence": "low"` and `"not_verifiable_in_code": true`, and name the infrastructure layer that might satisfy the requirement in `description`. Do not report absence as a confirmed violation.
 
-Pipelines that enforce these controls at the edge can filter on `not_verifiable_in_code` to avoid gating on them. These findings still count toward the violation totals and `pass` — filtering is the consumer's decision, not the scanner's.
+These findings count toward the per-level violation totals and toward `unverifiable_findings`, but they are **excluded from `pass`** — see **Target Level and Gating**. A pipeline that wants them to fail the build gates on `pass_including_unverifiable` instead.
+
+The same treatment applies to documentation requirements (see below): the scanner reports what it could not verify, and the consumer decides whether unverified means unsafe.
 
 ## Deduplication
 
@@ -190,8 +195,10 @@ You MUST output ONLY this JSON structure. No text before or after.
     "l1_violations": 0,
     "l2_violations": 0,
     "l3_violations": 0,
+    "unverifiable_findings": 0,
     "findings_truncated": false,
-    "pass": false
+    "pass": false,
+    "pass_including_unverifiable": false
   },
   "findings": [
     {
@@ -238,7 +245,7 @@ You MUST output ONLY this JSON structure. No text before or after.
 1. **NEVER output anything except JSON** — No "Here's the report:" or explanations
 2. **ALWAYS include file and line number** — For presence findings, the vulnerable line. For absence findings, where the control belongs. If you can locate neither, omit the finding.
 3. **ALWAYS map to ASVS 5.0 requirement** — Use the VX.Y.Z format
-4. **Set pass to false** if any finding violates a requirement at or below the target ASVS level
+4. **Compute both gate booleans.** `pass` is false if any **verifiable** finding violates a requirement at or below the target level; `pass_including_unverifiable` is false if any finding does, verifiable or not. Never let a `not_verifiable_in_code` finding set `pass` to false — the scanner did not check that control, so it must not fail the build on it.
 5. **Include code_snippet** — the actual vulnerable line for presence findings; the construct that lacks the control for absence findings
 6. **Be specific in remediation** — Show fixed code in the correct language, not just "use parameterized queries"
 7. **Include languages_detected and frameworks_detected** in scan metadata
@@ -250,7 +257,8 @@ You MUST output ONLY this JSON structure. No text before or after.
 13. **Respect the output limits** — at most 50 emitted findings; set `findings_truncated` only when the cap dropped something, and keep the counters reflecting everything found
 14. **`finding_type` is optional** — set `"absence"` for missing controls, and either omit it or set `"presence"` otherwise
 15. **`not_verifiable_in_code` is optional — omit it entirely unless it is `true`.** Consumers filter on its presence; emitting `false` on every finding bloats the output for no gain
-16. **`not_applicable_reasons` is required whenever `not_applicable` is non-empty** — one entry per listed section, keyed identically. Use section-level IDs (`"V17"`, `"V4.3"`) in `not_applicable`, and requirement-level IDs (`"V1.2.5"`) in the other three arrays
+16. **`unverifiable_findings` counts findings with `not_verifiable_in_code: true`** — it is exactly the gap between `pass` and `pass_including_unverifiable`. Emit `0` when there are none.
+17. **`not_applicable_reasons` is required whenever `not_applicable` is non-empty** — one entry per listed section, keyed identically. Use section-level IDs (`"V17"`, `"V4.3"`) in `not_applicable`, and requirement-level IDs (`"V1.2.5"`) in the other three arrays
 
 ## Example Output
 
@@ -270,8 +278,10 @@ You MUST output ONLY this JSON structure. No text before or after.
     "l1_violations": 3,
     "l2_violations": 1,
     "l3_violations": 0,
+    "unverifiable_findings": 1,
     "findings_truncated": false,
-    "pass": false
+    "pass": false,
+    "pass_including_unverifiable": false
   },
   "findings": [
     {
@@ -408,8 +418,10 @@ If you cannot scan properly, output:
     "l1_violations": 0,
     "l2_violations": 0,
     "l3_violations": 0,
+    "unverifiable_findings": 0,
     "findings_truncated": false,
     "pass": false,
+    "pass_including_unverifiable": false,
     "error": "Description of what went wrong"
   },
   "findings": [],
