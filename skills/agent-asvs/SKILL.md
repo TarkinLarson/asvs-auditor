@@ -49,7 +49,7 @@ Skip these by default. Findings here are noise, not risk:
 - **Build output and generated code**: `dist/`, `build/`, `out/`, `bin/`, `obj/`, minified bundles, generated API clients, protobuf/OpenAPI output, `*.designer.cs`
 - Anything matched by `.gitignore` — a reasonable first approximation of "not our source"
 
-Dependency manifests and lockfiles remain **in scope** — V15.4 depends on reading them.
+Dependency manifests and lockfiles remain **in scope** — the supply chain requirements (15.1.2, 15.2.1) depend on reading them.
 
 **Test code and fixtures** (`test/`, `tests/`, `spec/`, `__tests__/`, `*.test.*`, `*_test.go`, fixture and seed data): report only what represents production risk — a real credential committed to the repository, or a test helper reachable from production code. A deliberately vulnerable fixture is not a finding. When you do report from test code, say so explicitly and lower the confidence.
 
@@ -298,24 +298,40 @@ When citing a requirement, use the exact ID (e.g., V1.2.5) and verify the descri
 ### V15: Secure Coding and Architecture
 [Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x24-V15-Secure-Coding-and-Architecture.md)
 
-- **V15.1** Secure Coding — compiler warnings, no unsafe functions (L2)
-- **V15.2** Memory Safety — bounds checking, use-after-free prevention (L2)
-- **V15.3** Concurrency — race conditions, TOCTOU prevention (L2–L3)
-- **V15.4** Supply Chain Integrity — dependency provenance, SBOM (L2–L3)
+- **V15.1** Secure Coding and Architecture Documentation — 5 requirements (15.1.1–15.1.5)
+  - 15.1.1 Documented risk-based remediation time frames for vulnerable third-party components (L1)
+  - 15.1.2 Inventory catalog / SBOM of all third-party libraries, from trusted maintained repositories (L2)
+  - 15.1.3 Documentation identifies time-consuming or resource-demanding functionality (L2)
+- **V15.2** Security Architecture and Dependencies — 5 requirements (15.2.1–15.2.5)
+  - 15.2.1 No components in use that breach the documented update/remediation time frames — known-vulnerable dependencies (L1)
+  - 15.2.2 Defenses against loss of availability from resource-demanding functionality (L2)
+  - 15.2.3 Production contains only required functionality, no extraneous exposure (L2)
+  - 15.2.4 Components and all transitive dependencies come from the expected repository — dependency confusion (L3)
+- **V15.3** Defensive Coding — 7 requirements (15.3.1–15.3.7)
+  - 15.3.1 Return only the required subset of fields from a data object (L1)
+  - 15.3.3 Mass assignment countermeasures — allowed fields per controller and action (L2)
+  - 15.3.5 Strict type and equality checks (L2), 15.3.6 prototype pollution prevention (L2), 15.3.7 HTTP parameter pollution defenses (L2)
+- **V15.4** Safe Concurrency — 4 requirements (15.4.1–15.4.4), all L3
+  - 15.4.1 Thread-safe types and synchronization for shared objects (L3)
+  - 15.4.2 Atomic check-and-act to prevent TOCTOU race conditions (L3)
+
+**Supply chain checks map to 15.1.2, 15.2.1, and 15.2.4 — not to V15.4**, which is Safe Concurrency:
   - Check manifest files (`package.json`, `*.csproj`, `go.mod`, `requirements.txt`, `Gemfile`, `pom.xml`) for floating version ranges (`^`, `~`, `>=`, `*`) instead of pinned versions
   - Check lockfiles (`package-lock.json`, `yarn.lock`, `go.sum`, `Pipfile.lock`, `Gemfile.lock`) exist and are committed alongside their manifests
   - Check for a supply chain update policy: `.github/dependabot.yml`, `renovate.json`, or equivalent
   - Check for use of `npm install --ignore-scripts` or `--no-scripts` protections in CI
-  - Flag absence of lockfiles as a finding — floating deps are an active supply chain risk
+  - Absent lockfiles and no component inventory are findings under 15.1.2; components past their remediation window fall under 15.2.1
 
 ### V16: Security Logging and Error Handling
 [Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x25-V16-Security-Logging-and-Error-Handling.md)
 
-- **V16.1** Logging Documentation — log inventory across stack (L2)
-- **V16.2** General Logging — metadata (who/what/when/where), UTC timestamps, structured format (L2)
+- **V16.1** Security Logging Documentation — log inventory across stack (L2)
+- **V16.2** General Logging — 5 requirements (16.2.1–16.2.5) — metadata (who/what/when/where), UTC timestamps, structured format (L2)
   - 16.2.5 Sensitive data protection in logs (L2)
-- **V16.3** Security Events — auth events, authz failures, bypass attempts logged (L2)
-- **V16.4** Log Protection — log injection prevention, tamper protection (L2)
+- **V16.3** Security Events — 4 requirements (16.3.1–16.3.4) — auth events, authz failures, bypass attempts logged (L2)
+  - 16.3.4 Unexpected errors and security control failures logged, e.g. backend TLS failures (L2)
+- **V16.4** Log Protection — 3 requirements (16.4.1–16.4.3) — log injection prevention, tamper protection (L2)
+- **V16.5** Error Handling — 4 requirements (16.5.1–16.5.4) — graceful failure, no internal detail leaked to users, last-resort error handler (L2–L3)
 
 ### V17: WebRTC
 [Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x26-V17-WebRTC.md)
@@ -380,9 +396,9 @@ Adapt your search patterns to the detected stack. For example:
 
 - **Security headers** (V3.4): CSP, X-Content-Type-Options, Strict-Transport-Security, Referrer-Policy, Cross-Origin-Opener-Policy
 - **TLS configuration** (V12): Minimum TLS 1.2, strong cipher suites, valid certificates
-- **Dependency vulnerabilities** (V13.2): Known CVEs in package manifests
+- **Dependency vulnerabilities** (V15.2.1): Known-vulnerable components in package manifests
 - **Debug/development settings** (V13.4): Debug mode, verbose logging, development endpoints in production config
-- **Supply chain** (V15.4): Lockfiles committed and present, no floating version ranges, automated update policy configured
+- **Supply chain** (V15.1.2, V15.2.4): Component inventory/SBOM, lockfiles committed and present, no floating version ranges, automated update policy configured
 
 ## Prioritization: ASVS Levels, Not Severity Ratings
 
