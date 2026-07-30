@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/). Since these are prompt-based agents (not compiled software), versioning reflects meaningful changes to agent behavior, accuracy, or coverage.
 
+## [3.0.0] - 2026-07-30
+
+Breaking release: repackaged from slash commands to Agent Skills. Prompt content, agent behavior, and the CI JSON contract are unchanged — only the packaging and install paths changed.
+
+### Changed
+- **Repackaged as Agent Skills (`SKILL.md` directory format)**. Claude Code merged custom commands into skills; `SKILL.md` is the documented recommendation, follows the [Agent Skills](https://agentskills.io) open standard, and — unlike command files — also works in claude.ai account contexts (Cowork, cloud sessions), which don't read `.claude/commands/`. It also allows supporting files to ship alongside the prompt in future releases.
+  - `agent-asvs.md` → `skills/agent-asvs/SKILL.md`, installed to `.claude/skills/agent-asvs/SKILL.md`
+  - `agent-asvs-ci.md` → `skills/agent-asvs-ci/SKILL.md`, installed to `.claude/skills/agent-asvs-ci/SKILL.md`
+  - Slash invocations are unchanged (`/agent-asvs`, `/agent-asvs-ci`); the skill name comes from the directory name. Existing CI workflows calling `claude -p "/agent-asvs-ci"` keep working once the file is installed at the new path.
+- README updated throughout: Quick Start, installation (including claude.ai/Cowork usage), variants table, CI notes, and badge.
+
+### Migration from 2.x
+1. Delete the old command files: `.claude/commands/agent-asvs.md` and `.claude/commands/agent-asvs-ci.md` (also any copies in `~/.claude/commands/`).
+2. Install to the new paths per the README, e.g. `.claude/skills/agent-asvs/SKILL.md`.
+
 ## [2.0.0] - 2026-06-12
 
 Breaking release: the CI JSON output contract changed (severity field removed, per-level violation counters added).
@@ -58,6 +73,7 @@ Breaking release: the CI JSON output contract changed (severity field removed, p
 - Agent instructed to fetch chapter source from GitHub when unsure of exact requirement wording
 - False positive caveat added to "every app has vulnerabilities" personality trait
 
+[3.0.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v1.1.0...v2.0.0
 [1.1.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/TarkinLarson/asvs-auditor/releases/tag/v1.0.0
