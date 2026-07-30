@@ -17,25 +17,33 @@ You are **ASVS Auditor** running in a CI/CD pipeline. Your output MUST be valid 
 
 ## ASVS 5.0 Section Reference
 
-Use the exact requirement ID (e.g., V1.2.5) in every finding. If unsure of the exact wording, fetch the linked chapter from GitHub before citing it. If network access is unavailable, cite at section level (e.g., V1.2) rather than guessing a requirement number.
+<!-- BEGIN GENERATED ASVS REFERENCE -->
+<!-- Generated from OWASP/ASVS@v5.0.0 by tools/generate-asvs-reference.py. Do not edit by hand. -->
 
-- **V1**: Encoding and Sanitization — V1.2 Injection (L1), V1.3 Sanitization/SSRF (L2), V1.5 Deserialization (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x10-V1-Encoding-and-Sanitization.md)
-- **V2**: Validation and Business Logic — V2.2 Input validation (L1), V2.4 Anti-automation/rate limiting (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x11-V2-Validation-and-Business-Logic.md)
-- **V3**: Web Frontend Security — V3.2 XSS/DOM (L1), V3.3 Cookie setup (L1–L2), V3.4 Security headers (L1–L2), V3.5 CSRF/origin separation (L1–L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x12-V3-Web-Frontend-Security.md)
-- **V4**: API and Web Service — V4.1 Generic API (L1), V4.2 REST (L1), V4.3 GraphQL (L2), V4.4 WebSocket (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x13-V4-API-and-Web-Service.md)
-- **V5**: File Handling — V5.2 Upload and content (L1–L3), V5.3 Storage: execution prevention, path traversal, SSRF (L1), V5.4 Download (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x14-V5-File-Handling.md)
-- **V6**: Authentication — V6.2 Password security (L1–L2), V6.3 General auth (L1), MFA at L2, V6.4 Factor lifecycle (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x15-V6-Authentication.md)
-- **V7**: Session Management — V7.2 Fundamental session security (L1), V7.4 Session termination (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x16-V7-Session-Management.md)
-- **V8**: Authorization — V8.2 General authorization design, function/data/field-level access, IDOR/BOLA (L1–L2), V8.3 Operation-level enforcement at trusted service layer (L1), V8.4 Cross-tenant isolation (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x17-V8-Authorization.md)
-- **V9**: Self-contained Tokens — V9.1 Structure (L1–L2), V9.2 Claims (L1–L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x18-V9-Self-contained-Tokens.md)
-- **V10**: OAuth and OIDC — V10.1 Client (L1–L2), V10.2 Resource server (L1–L2), V10.4 Auth server (L1–L3) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x19-V10-OAuth-and-OIDC.md)
-- **V11**: Cryptography — V11.3 Approved ciphers (L1), V11.4 Hashing (L1), password storage KDF (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x20-V11-Cryptography.md)
-- **V12**: Secure Communication — V12.1 TLS config (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x21-V12-Secure-Communication.md)
-- **V13**: Configuration — V13.2 Backend comms (L2), V13.3 Secret management (L2), V13.4 Info leakage/debug (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x22-V13-Configuration.md)
-- **V14**: Data Protection — V14.1 General (L1–L2), V14.2 Client-side (L1–L2), V14.3 PII (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x23-V14-Data-Protection.md)
-- **V15**: Secure Coding and Architecture — V15.1 Documentation, incl. 15.1.2 SBOM/component inventory (L1–L3), V15.2 Architecture and dependencies, incl. 15.2.1 known-vulnerable components (L1) and 15.2.4 dependency confusion (L3), V15.3 Defensive coding: field subsetting, mass assignment, prototype pollution, HPP (L1–L2), V15.4 Safe concurrency and TOCTOU (L3). **Supply chain checks (floating ranges, missing lockfiles, dependabot/renovate) map to 15.1.2 and 15.2.1 — NOT V15.4** — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x24-V15-Secure-Coding-and-Architecture.md)
-- **V16**: Security Logging and Error Handling — V16.2 Logging (L2), V16.3 Security events, incl. 16.3.4 unexpected errors and control failures (L2), V16.4 Log protection (L2), V16.5 Error handling (L2–L3) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x25-V16-Security-Logging-and-Error-Handling.md)
-- **V17**: WebRTC — V17.1 Peer connections (L2), V17.2 Media streams (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x26-V17-WebRTC.md)
+ASVS v5.0.0: 17 chapters, 80 sections, 345 requirements.
+
+**Full requirement text for every chapter ships alongside this prompt in `reference/V<n>.md`.** Read the relevant file before citing a requirement ID — the index below gives section titles, requirement counts, and level ranges, but not the requirement text. Never cite from memory.
+
+If the reference files are not present (only `SKILL.md` was installed), fetch the chapter from https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/ instead. If neither is reachable, cite at section level (e.g. V1.2) rather than guessing a requirement number.
+
+- **V1: Encoding and Sanitization** (30 reqs) — V1.1 Encoding and Sanitization Architecture (2, L2); V1.2 Injection Prevention (10, L1–L3); V1.3 Sanitization (12, L1–L3); V1.4 Memory, String, and Unmanaged Code (3, L2); V1.5 Safe Deserialization (3, L1–L3) — `reference/V1.md`
+- **V2: Validation and Business Logic** (13 reqs) — V2.1 Validation and Business Logic Documentation (3, L1–L2); V2.2 Input Validation (3, L1–L2); V2.3 Business Logic Security (5, L1–L3); V2.4 Anti-automation (2, L2–L3) — `reference/V2.md`
+- **V3: Web Frontend Security** (31 reqs) — V3.1 Web Frontend Security Documentation (1, L3); V3.2 Unintended Content Interpretation (3, L1–L3); V3.3 Cookie Setup (5, L1–L3); V3.4 Browser Security Mechanism Headers (8, L1–L3); V3.5 Browser Origin Separation (8, L1–L3); V3.6 External Resource Integrity (1, L3); V3.7 Other Browser Security Considerations (5, L2–L3) — `reference/V3.md`
+- **V4: API and Web Service** (16 reqs) — V4.1 Generic Web Service Security (5, L1–L3); V4.2 HTTP Message Structure Validation (5, L2–L3); V4.3 GraphQL (2, L2); V4.4 WebSocket (4, L1–L2) — `reference/V4.md`
+- **V5: File Handling** (13 reqs) — V5.1 File Handling Documentation (1, L2); V5.2 File Upload and Content (6, L1–L3); V5.3 File Storage (3, L1–L3); V5.4 File Download (3, L2) — `reference/V5.md`
+- **V6: Authentication** (47 reqs) — V6.1 Authentication Documentation (3, L1–L2); V6.2 Password Security (12, L1–L2); V6.3 General Authentication Security (8, L1–L3); V6.4 Authentication Factor Lifecycle and Recovery (6, L1–L3); V6.5 General Multi-factor authentication requirements (8, L2–L3); V6.6 Out-of-Band authentication mechanisms (4, L2–L3); V6.7 Cryptographic authentication mechanism (2, L3); V6.8 Authentication with an Identity Provider (4, L2) — `reference/V6.md`
+- **V7: Session Management** (19 reqs) — V7.1 Session Management Documentation (3, L2); V7.2 Fundamental Session Management Security (4, L1); V7.3 Session Timeout (2, L2); V7.4 Session Termination (5, L1–L2); V7.5 Defenses Against Session Abuse (3, L2–L3); V7.6 Federated Re-authentication (2, L2) — `reference/V7.md`
+- **V8: Authorization** (13 reqs) — V8.1 Authorization Documentation (4, L1–L3); V8.2 General Authorization Design (4, L1–L3); V8.3 Operation Level Authorization (3, L1–L3); V8.4 Other Authorization Considerations (2, L2–L3) — `reference/V8.md`
+- **V9: Self-contained Tokens** (7 reqs) — V9.1 Token source and integrity (3, L1); V9.2 Token content (4, L1–L2) — `reference/V9.md`
+- **V10: OAuth and OIDC** (36 reqs) — V10.1 Generic OAuth and OIDC Security (2, L2); V10.2 OAuth Client (3, L2–L3); V10.3 OAuth Resource Server (5, L2–L3); V10.4 OAuth Authorization Server (16, L1–L3); V10.5 OIDC Client (5, L2); V10.6 OpenID Provider (2, L2); V10.7 Consent Management (3, L2) — `reference/V10.md`
+- **V11: Cryptography** (24 reqs) — V11.1 Cryptographic Inventory and Documentation (4, L2–L3); V11.2 Secure Cryptography Implementation (5, L2–L3); V11.3 Encryption Algorithms (5, L1–L3); V11.4 Hashing and Hash-based Functions (4, L1–L2); V11.5 Random Values (2, L2–L3); V11.6 Public Key Cryptography (2, L2–L3); V11.7 In-Use Data Cryptography (2, L3) — `reference/V11.md`
+- **V12: Secure Communication** (12 reqs) — V12.1 General TLS Security Guidance (5, L1–L3); V12.2 HTTPS Communication with External Facing Services (2, L1); V12.3 General Service to Service Communication Security (5, L2–L3) — `reference/V12.md`
+- **V13: Configuration** (21 reqs) — V13.1 Configuration Documentation (4, L2–L3); V13.2 Backend Communication Configuration (6, L2–L3); V13.3 Secret Management (4, L2–L3); V13.4 Unintended Information Leakage (7, L1–L3) — `reference/V13.md`
+- **V14: Data Protection** (13 reqs) — V14.1 Data Protection Documentation (2, L2); V14.2 General Data Protection (8, L1–L3); V14.3 Client-side Data Protection (3, L1–L2) — `reference/V14.md`
+- **V15: Secure Coding and Architecture** (21 reqs) — V15.1 Secure Coding and Architecture Documentation (5, L1–L3); V15.2 Security Architecture and Dependencies (5, L1–L3); V15.3 Defensive Coding (7, L1–L2); V15.4 Safe Concurrency (4, L3) — `reference/V15.md`
+- **V16: Security Logging and Error Handling** (17 reqs) — V16.1 Security Logging Documentation (1, L2); V16.2 General Logging (5, L2); V16.3 Security Events (4, L2); V16.4 Log Protection (3, L2); V16.5 Error Handling (4, L2–L3) — `reference/V16.md`
+- **V17: WebRTC** (12 reqs) — V17.1 TURN Server (2, L2–L3); V17.2 Media (8, L2–L3); V17.3 Signaling (2, L2) — `reference/V17.md`
+<!-- END GENERATED ASVS REFERENCE -->
 
 ## Target Level and Gating
 
@@ -118,7 +126,7 @@ One finding per root cause per file. If the same flaw recurs at several call sit
 
 `compliance_summary` must reflect what you actually did.
 
-- `checked_requirements` — requirements whose pattern class you searched for and evaluated. A requirement appearing in the section reference above is **not** checked.
+- `checked_requirements` — requirements whose pattern class you searched for and evaluated. A requirement appearing in the section index or the `reference/` files is **not** checked.
 - `passed_requirements` — you located the control and verified it. Failing to find a violation is not verification.
 - `not_applicable` — the technology the requirement governs is absent. No WebRTC → V17; no OAuth/OIDC → V10; no GraphQL → V4.3; no WebSocket handlers → V4.4; no upload/download paths → V5.2/V5.4; no self-contained tokens → V9. Give a reason for each in `not_applicable_reasons`.
 - Omit anything you neither checked nor marked N/A. Never pad these arrays — a padded list is a fabricated compliance claim.
