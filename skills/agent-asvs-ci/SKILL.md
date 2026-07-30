@@ -49,23 +49,37 @@ The scan targets an ASVS level — default **L2** unless the user specifies othe
 
 Skip these by default. Findings here are noise, not risk:
 
-- **Vendored and third-party code**: `node_modules/`, `vendor/`, `packages/`, `bower_components/`, `site-packages/`
+- **Vendored and third-party code**: `node_modules/`, `vendor/`, `bower_components/`, `site-packages/`. Note `packages/` is the source root in pnpm/yarn-workspaces/Lerna/Nx monorepos — check for `workspaces` in `package.json` or a `pnpm-workspace.yaml` before treating it as vendored, and never exclude it when it holds first-party code.
+- Third-party **libraries committed by copy** (`wwwroot/lib/`, `static/js/vendor/`, minified bundles) are not code-reviewed, but their **versions remain in scope** for 15.2.1 and 15.2.4.
 - **Build output and generated code**: `dist/`, `build/`, `out/`, `bin/`, `obj/`, minified bundles, generated API clients, protobuf/OpenAPI output, `*.designer.cs`
-- Anything matched by `.gitignore`
+- Anything matched by `.gitignore`, **except** secret-bearing config present in the working tree (`.env`, `appsettings.*.json`, `local.settings.json`, `*.tfvars`, `*.pem`, `*.key`, `secrets/`) — those are gitignored in most repos and are the highest-yield secret targets, so they stay in scope
 
 Dependency manifests and lockfiles remain **in scope** — the supply chain requirements (15.1.2, 15.2.1) depend on reading them.
 
-**Test code and fixtures** (`test/`, `tests/`, `spec/`, `__tests__/`, `*.test.*`, `*_test.go`, fixture and seed data): report only production risk — a real credential committed to the repository, or a test helper reachable from production code. A deliberately vulnerable fixture is not a finding. When reporting from test code, say so in `description` and set `confidence` no higher than `medium`.
+**Test code and fixtures** (`test/`, `tests/`, `spec/`, `__tests__/`, `*.test.*`, `*_test.go`): report only production risk. A deliberately vulnerable fixture is not a finding, and a *pattern* found only in test code is capped at `medium`. But a **verified credential** committed anywhere is a full-confidence finding, and **test scaffolding that ships or disables a production control** (test auth handlers, `WebApplicationFactory` overrides, development-environment defaults that survive a release build) is in scope at full confidence.
+
+**Seed, fixture and migration data are NOT excluded** (`db/seeds.*`, `*Seed*.*`, `fixtures/*.yml`, `docker-compose.yml`): default and shared accounts live there and ship to production — 6.3.2 (L1) depends on reading them.
 
 ## Evidence Standards
 
-### Reachability
+### Reachability — taint-flow requirements only
 
-A dangerous sink is not a finding until untrusted input can reach it. Trace the path from an entry point — request parameter, header, cookie, path segment, uploaded file, queue message, or third-party response — to the sink before reporting.
+This rubric applies to requirements about untrusted input reaching a dangerous sink: **V1.2, V1.3, V1.5, V5.3, V8.2, V15.3**. It does **not** apply to configuration or absence findings — see the next section.
+
+Trace the path from an entry point — request parameter, header, cookie, path segment, uploaded file, queue message, or third-party response — to the sink before reporting.
 
 - Traced path from an untrusted entry point, no defensive code in between → `"confidence": "high"`
+- **Defensive code present but not appropriate to the sink's context, or bypassable** — HTML escaping applied to a SQL context, a permissive or anchorless regex, `parseInt`/`IsNullOrEmpty`/`[Required]` mistaken for sanitization, `addslashes` — → `"high"` or `"medium"`, and name the bypass in `description`. **Defence-present-but-wrong is a finding, not an exemption.**
 - Sink present, path plausible but untraceable → `"medium"`
-- Sink fed only by constants, enum values, or data already validated upstream → **omit the finding**
+- Sink fed only by constants or enum values, or by data provably validated with a control appropriate to the sink → **omit the finding**
+
+### Configuration and absence findings
+
+For requirements with no taint path — cookie attributes (V3.3), headers (V3.4), TLS (V12), crypto choices (11.3, 11.4), debug settings (13.4), default accounts (6.3.2), missing controls — reachability is irrelevant and `high` confidence does **not** require a traced path:
+
+- The setting is present and demonstrably wrong, or the control is absent after an exhaustive search → `"high"`
+- The setting is ambiguous, environment-dependent, or the search could not be exhaustive → `"medium"`
+- The control may be enforced outside the codebase → `"low"` with `not_verifiable_in_code` (see below)
 
 ### Secrets
 
@@ -83,9 +97,13 @@ Some requirements are violated by absence: no rate limiting, no CSRF protection,
 
 Presence findings may omit `finding_type` or set it to `"presence"`.
 
+**Documentation requirements** (15.1.1, 2.1.x, 5.1.x, 6.1.x, 7.1.x, 8.1.x, 11.1.x, 13.1.x, 16.1.x, and the 15.1.2 inventory/SBOM) ask whether a policy is *written down*, which source code cannot answer. Do not silently drop them and do not fabricate a location. Anchor to the documentation that should contain them — `README`, `SECURITY.md`, `docs/`, or the repository root when none exists — set `"confidence": "low"` and `"not_verifiable_in_code": true`, and say in `description` where you looked. Reporting them as unverifiable preserves the information; omitting them hides a whole requirement class.
+
 ## Controls Enforced Outside the Code
 
-Security headers (V3.4), TLS configuration (V12), and rate limiting (V2.4) are routinely enforced at a reverse proxy, CDN, API gateway, or service mesh — invisible to source review.
+Security headers (V3.4), TLS configuration (V12), and rate limiting are routinely enforced at a reverse proxy, CDN, API gateway, or service mesh — invisible to source review.
+
+**Rate limiting has two distinct requirements — use the right one.** Throttling on authentication endpoints (login, registration, password reset) is **6.3.1 (L1)**, anti-stuffing and brute-force controls. General anti-automation on expensive or bulk-data endpoints is **2.4.1 (L2)**. Citing the wrong one moves the gate: at `target L1`, 6.3.1 fails the build and 2.4.1 does not.
 
 - If infrastructure config is in the repository (nginx/Apache config, Kubernetes ingress, Terraform/Bicep/CloudFormation, `Dockerfile`, gateway or CDN config), scan it and report definitively.
 - If it is not, set `"confidence": "low"` and `"not_verifiable_in_code": true`, and name the infrastructure layer that might satisfy the requirement in `description`. Do not report absence as a confirmed violation.
@@ -109,9 +127,10 @@ One finding per root cause per file. If the same flaw recurs at several call sit
 
 A truncated JSON document is an unusable scan. On a large codebase:
 
-- Emit at most **50 findings**, ordered L1 first, then `high` before `medium` before `low`.
+- Emit at most **50 findings**. Order by ASVS level (L1 first), then `not_verifiable_in_code: false` before `true`, then `high` before `medium` before `low`. Sorting unverifiable findings last within their level stops mandated-`low` header and TLS findings from evicting a high-confidence injection.
 - Count **all** findings you identified in `total_findings` and the per-level counters, not just the emitted subset — `pass` gating must reflect everything found.
-- When you emit fewer findings than you found, set `"findings_truncated": true`.
+- Set `"findings_truncated": true` **only** when the 50-finding cap dropped something. Deduplication also reduces the emitted count and must not set the flag.
+- The per-level counters are **post-deduplication** finding counts, not raw occurrence counts: a flaw at 12 call sites in one file contributes 1, matching the emitted findings.
 - Keep `context` to at most 5 lines per finding.
 
 ## Scan Process
@@ -131,7 +150,7 @@ A truncated JSON document is an unusable scan. On a large codebase:
 - **Missing CSRF protection** (V3.5): state-changing operations without anti-CSRF tokens or origin verification
 - **Missing auth** (V8): unprotected routes and endpoints
 - **Insecure cookies** (V3.3): missing Secure/HttpOnly/SameSite flags
-- **Missing rate limiting** (V2.4): login, registration, password reset without throttling
+- **Missing rate limiting**: login, registration, password reset without throttling (**6.3.1**, L1); expensive or bulk-data endpoints without anti-automation (**2.4.1**, L2)
 - **Information leakage** (V13.4): debug flags in production config, verbose error output, stack traces
 - **Insecure deserialization** (V1.5): untrusted data deserialized without validation
 - **SSRF** (V1.3.6): server-side requests built from user input without URL validation
@@ -168,7 +187,7 @@ You MUST output ONLY this JSON structure. No text before or after.
   },
   "findings": [
     {
-      "id": "ASVS-V1.2.5-ReportService.cs-87",
+      "id": "ASVS-V1.2.5-src/services/ReportService.cs-87",
       "asvs_requirement": "V1.2.5",
       "asvs_title": "Verify that the application protects against OS command injection",
       "asvs_level": "L1",
@@ -184,7 +203,6 @@ You MUST output ONLY this JSON structure. No text before or after.
       "remediation": "Specific fix with code example in the correct language",
       "cwe_id": "CWE-78",
       "confidence": "high|medium|low",
-      "not_verifiable_in_code": false,
       "references": [
         "https://cheatsheetseries.owasp.org/relevant-page"
       ]
@@ -201,7 +219,7 @@ You MUST output ONLY this JSON structure. No text before or after.
     {
       "priority": 1,
       "action": "Fix OS command injection vulnerabilities immediately",
-      "findings_addressed": ["ASVS-V1.2.5-ReportService.cs-87"]
+      "findings_addressed": ["ASVS-V1.2.5-src/Services/ReportService.cs-87"]
     }
   ]
 }
@@ -218,10 +236,13 @@ You MUST output ONLY this JSON structure. No text before or after.
 7. **Include languages_detected and frameworks_detected** in scan metadata
 8. **Get the timestamp from the system** — run `date -u +%Y-%m-%dT%H:%M:%SZ` (or PowerShell equivalent); never guess the date
 9. **Set confidence** per finding using the rubric in **Evidence Standards** — `high` requires a traced path from untrusted input
-10. **Derive `id` from content, never sequentially** — use `ASVS-<requirement>-<file basename>-<line>`, e.g. `ASVS-V1.2.5-ReportService.cs-87`. Sequential IDs renumber between runs and cannot be tracked across scans. Reference these IDs in `recommendations[].findings_addressed`.
-11. **`files_scanned` is a count, not an estimate** — the number of distinct files you actually read or that matched your scan searches. If you cannot determine it, use `0`. Never guess a plausible-looking number.
+10. **Derive `id` from content, never sequentially** — use `ASVS-<requirement>-<repo-relative path>-<line>`, e.g. `ASVS-V1.2.5-src/Services/ReportService.cs-87`. Use the full path, not the basename: two files named `index.ts` or `Program.cs` with a finding on the same line would otherwise collide, making `findings_addressed` ambiguous. IDs are stable while the finding stays at the same requirement, path, and line. Reference them in `recommendations[].findings_addressed`.
+11. **`files_scanned` is a count of files you actually read** — not files matched by a grep, and never an estimate. If you cannot determine it, use `null`. Do not use `0`: the failure-mode block uses `files_scanned: 0` with `error` to signal a scan that never ran.
 12. **Omit `column` unless you know it exactly** — it is optional. Never estimate a column number.
-13. **Respect the output limits** — at most 50 emitted findings, with `findings_truncated` set and the counters reflecting everything found
+13. **Respect the output limits** — at most 50 emitted findings; set `findings_truncated` only when the cap dropped something, and keep the counters reflecting everything found
+14. **`finding_type` is optional** — set `"absence"` for missing controls, and either omit it or set `"presence"` otherwise
+15. **`not_verifiable_in_code` is optional — omit it entirely unless it is `true`.** Consumers filter on its presence; emitting `false` on every finding bloats the output for no gain
+16. **`not_applicable_reasons` is required whenever `not_applicable` is non-empty** — one entry per listed section, keyed identically. Use section-level IDs (`"V17"`, `"V4.3"`) in `not_applicable`, and requirement-level IDs (`"V1.2.5"`) in the other three arrays
 
 ## Example Output
 
@@ -246,7 +267,7 @@ You MUST output ONLY this JSON structure. No text before or after.
   },
   "findings": [
     {
-      "id": "ASVS-V1.2.5-ReportService.cs-87",
+      "id": "ASVS-V1.2.5-src/Services/ReportService.cs-87",
       "asvs_requirement": "V1.2.5",
       "asvs_title": "OS Command Injection Prevention",
       "asvs_level": "L1",
@@ -267,7 +288,7 @@ You MUST output ONLY this JSON structure. No text before or after.
       ]
     },
     {
-      "id": "ASVS-V3.3.1-Startup.cs-42",
+      "id": "ASVS-V3.3.1-src/Startup.cs-42",
       "asvs_requirement": "V3.3.1",
       "asvs_title": "Cookie Secure attribute",
       "asvs_level": "L1",
@@ -309,7 +330,7 @@ You MUST output ONLY this JSON structure. No text before or after.
       ]
     },
     {
-      "id": "ASVS-V6.3.1-AuthController.cs-24",
+      "id": "ASVS-V6.3.1-src/Controllers/AuthController.cs-24",
       "asvs_requirement": "V6.3.1",
       "asvs_title": "Controls to prevent credential stuffing and password brute force are implemented",
       "asvs_level": "L1",
@@ -344,17 +365,17 @@ You MUST output ONLY this JSON structure. No text before or after.
     {
       "priority": 1,
       "action": "Replace shell command construction with ProcessStartInfo.ArgumentList to prevent OS command injection",
-      "findings_addressed": ["ASVS-V1.2.5-ReportService.cs-87"]
+      "findings_addressed": ["ASVS-V1.2.5-src/Services/ReportService.cs-87"]
     },
     {
       "priority": 2,
       "action": "Set cookie SecurePolicy to Always and disable detailed errors in production configuration",
-      "findings_addressed": ["ASVS-V3.3.1-Startup.cs-42", "ASVS-V13.4.2-appsettings.json-8"]
+      "findings_addressed": ["ASVS-V3.3.1-src/Startup.cs-42", "ASVS-V13.4.2-appsettings.json-8"]
     },
     {
       "priority": 3,
       "action": "Add rate limiting to authentication endpoints, or confirm it is enforced at the gateway",
-      "findings_addressed": ["ASVS-V6.3.1-AuthController.cs-24"]
+      "findings_addressed": ["ASVS-V6.3.1-src/Controllers/AuthController.cs-24"]
     }
   ]
 }
