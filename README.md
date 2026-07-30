@@ -102,7 +102,7 @@ Cowork and cloud sessions don't read local `.claude` directories. To use the aud
 
 ## CI Integration
 
-The CI variant outputs strict JSON with a `scan_summary.pass` boolean. Run Claude Code headless and gate the pipeline on it:
+The CI variant outputs strict JSON with a `scan_summary.pass` boolean covering everything it could verify from source, plus `pass_including_unverifiable` for the stricter reading. Run Claude Code headless and gate the pipeline on whichever fits your deployment:
 
 ```yaml
 # .github/workflows/asvs-scan.yml
@@ -124,10 +124,22 @@ jobs:
           jq . scan.json > /dev/null   # validate JSON
       - name: Gate on findings
         run: |
+          # Gate on `pass` — verifiable violations only. Swap for
+          # `pass_including_unverifiable` to also fail on controls the scanner
+          # could not confirm from source (proxy-enforced headers, TLS, docs).
           if [ "$(jq -r '.scan_summary.pass' scan.json)" != "true" ]; then
-            echo "::error::ASVS scan failed — violations at or below the target level"
-            jq -r '.findings[] | "\(.asvs_level) \(.asvs_requirement) \(.file):\(.line) — \(.title)"' scan.json
+            echo "::error::ASVS scan failed — verifiable violations at or below the target level"
+            jq -r '.findings[] | select(.not_verifiable_in_code != true)
+                   | "\(.asvs_level) \(.asvs_requirement) \(.file):\(.line) — \(.title)"' scan.json
             exit 1
+          fi
+      - name: Report what could not be verified from source
+        run: |
+          n=$(jq -r '.scan_summary.unverifiable_findings' scan.json)
+          if [ "$n" != "0" ]; then
+            echo "::warning::$n requirement(s) could not be verified from source — confirm they are enforced at your proxy, gateway, or in documentation"
+            jq -r '.findings[] | select(.not_verifiable_in_code == true)
+                   | "\(.asvs_level) \(.asvs_requirement) — \(.title)"' scan.json
           fi
       - uses: actions/upload-artifact@v4
         if: always()
@@ -140,11 +152,7 @@ Notes:
 
 - The skill must be present in the repo at `.claude/skills/agent-asvs-ci/SKILL.md` for `/agent-asvs-ci` to resolve.
 - Model output may occasionally include markdown fences or preamble despite instructions — keep the extraction step defensive (the `sed` filter above) and treat unparseable output as a failed scan.
-- Controls commonly enforced at a proxy, CDN, or gateway (security headers, TLS, rate limiting) are reported with `not_verifiable_in_code: true` and low confidence when no infrastructure config is present in the repo. They still count toward the violation totals and `pass` — if your edge enforces them, filter those findings out in your gating step rather than expecting the scanner to guess:
-
-  ```bash
-  jq '[.findings[] | select(.not_verifiable_in_code != true)] | length' scan.json
-  ```
+- **Two gate booleans.** `pass` covers only what the scanner could verify from source. `pass_including_unverifiable` is the strict reading and also fails on controls it could not confirm — security headers, TLS, and rate limiting enforced at a proxy or CDN, and documentation requirements that ask whether a policy is written down. Those findings carry `not_verifiable_in_code: true` at low confidence, are counted in `unverifiable_findings`, and still appear in the per-level violation totals; the two booleans differ by exactly that set. Gate on `pass` unless you want unverified to mean unsafe.
 
 - Findings violated by absence (missing rate limiting, missing lockfile) carry `finding_type: "absence"` and are anchored to the file and line where the control belongs, so every finding has a location.
 - On large codebases the emitted findings array is capped at 50 with `findings_truncated: true`; the per-level counters and `total_findings` always reflect everything found, so `pass` gating stays correct even when the list is truncated.
