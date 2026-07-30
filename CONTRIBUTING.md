@@ -34,7 +34,7 @@ Thanks for your interest in improving the ASVS Auditor agents. This is a prompt 
 - Include the GitHub chapter link when adding new section references
 
 ### Testing
-- Run the agent against at least one real codebase before submitting
+- Run the agent against at least one real codebase before submitting, and say in your PR what you ran it against with the relevant output pasted in — a prompt change with no evidence of a run is unreviewable
 - For the CI variant, validate that the output is parseable JSON
 - Check that findings include file paths, line numbers, and correct requirement IDs
 
