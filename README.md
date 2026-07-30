@@ -2,7 +2,7 @@
 
 [![ASVS Version](https://img.shields.io/badge/ASVS-5.0-blue)](https://github.com/OWASP/ASVS/tree/v5.0.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Claude Code](https://img.shields.io/badge/Claude_Code-slash_command-purple)](https://claude.com/claude-code)
+[![Claude Code](https://img.shields.io/badge/Claude_Code-agent_skill-purple)](https://claude.com/claude-code)
 
 AI-powered security auditor agent for [Claude Code](https://claude.com/claude-code) that tests your application against the [OWASP Application Security Verification Standard (ASVS) 5.0](https://github.com/OWASP/ASVS/tree/v5.0.0).
 
@@ -29,9 +29,9 @@ AI-powered security auditor agent for [Claude Code](https://claude.com/claude-co
 
 ```bash
 # Copy to your project
-mkdir -p .claude/commands
-curl -sL https://raw.githubusercontent.com/TarkinLarson/asvs-auditor/v2.0.0/agent-asvs.md \
-  -o .claude/commands/agent-asvs.md
+mkdir -p .claude/skills/agent-asvs
+curl -sL https://raw.githubusercontent.com/TarkinLarson/asvs-auditor/v3.0.0/skills/agent-asvs/SKILL.md \
+  -o .claude/skills/agent-asvs/SKILL.md
 ```
 
 Then in Claude Code:
@@ -56,32 +56,36 @@ For best results, use the most capable available model:
 
 | File | Purpose | Output |
 |------|---------|--------|
-| [`agent-asvs.md`](agent-asvs.md) | Interactive auditor | Markdown report with findings, compliance matrix, and remediation |
-| [`agent-asvs-ci.md`](agent-asvs-ci.md) | CI/CD pipeline | Strict JSON for automation, exit code gating, and dashboards |
+| [`skills/agent-asvs/SKILL.md`](skills/agent-asvs/SKILL.md) | Interactive auditor | Markdown report with findings, compliance matrix, and remediation |
+| [`skills/agent-asvs-ci/SKILL.md`](skills/agent-asvs-ci/SKILL.md) | CI/CD pipeline | Strict JSON for automation, exit code gating, and dashboards |
 
-### Commands, not subagents
+### Skills, not subagents
 
-Both files are packaged as Claude Code **slash commands** — prompt files installed to `.claude/commands/` and invoked as `/agent-asvs`. The "agent" in the name refers to the auditor *persona* the prompt creates, not Claude Code's separate [subagent](https://docs.claude.com/en/docs/claude-code/sub-agents) feature (`.claude/agents/`).
+Both are packaged as Claude Code **skills** — `SKILL.md` prompt files following the [Agent Skills](https://agentskills.io) open standard, installed to `.claude/skills/<name>/` and invoked as `/agent-asvs` (or loaded automatically by Claude when relevant). The "agent" in the name refers to the auditor *persona* the prompt creates, not Claude Code's separate [subagent](https://docs.claude.com/en/docs/claude-code/sub-agents) feature (`.claude/agents/`).
 
-If you prefer an isolated context window for long scans of large codebases, the files also work as subagents: copy one to `.claude/agents/`, and add `name:` (e.g., `asvs-auditor`) to the frontmatter. The command form is the supported default — the CI workflow below depends on it.
+If you prefer an isolated context window for long scans of large codebases, the files also work as subagents: copy a `SKILL.md` to `.claude/agents/` as e.g. `asvs-auditor.md`, and add `name:` (e.g., `asvs-auditor`) to the frontmatter. The skill form is the supported default — the CI workflow below depends on it.
 
 ## Installation
 
 ### Per-project (recommended)
 
 ```bash
-mkdir -p .claude/commands
-cp agent-asvs.md .claude/commands/
-cp agent-asvs-ci.md .claude/commands/   # optional
+mkdir -p .claude/skills
+cp -r skills/agent-asvs .claude/skills/
+cp -r skills/agent-asvs-ci .claude/skills/   # optional
 ```
 
 ### Global (all projects)
 
 ```bash
-mkdir -p ~/.claude/commands
-cp agent-asvs.md ~/.claude/commands/
-cp agent-asvs-ci.md ~/.claude/commands/   # optional
+mkdir -p ~/.claude/skills
+cp -r skills/agent-asvs ~/.claude/skills/
+cp -r skills/agent-asvs-ci ~/.claude/skills/   # optional
 ```
+
+### claude.ai / Cowork
+
+Cowork and cloud sessions don't read local `.claude` directories. To use the auditor there, enable the skill folder on your claude.ai account — from the skills settings on claude.ai or the desktop app's **Customize** sidebar. Cloud sessions also pick up project skills committed to the repository's `.claude/skills/`.
 
 ## Usage
 
@@ -132,7 +136,7 @@ jobs:
 
 Notes:
 
-- The agent file must be present in the repo at `.claude/commands/agent-asvs-ci.md` for the slash command to resolve.
+- The skill must be present in the repo at `.claude/skills/agent-asvs-ci/SKILL.md` for `/agent-asvs-ci` to resolve.
 - Model output may occasionally include markdown fences or preamble despite instructions — keep the extraction step defensive (the `sed` filter above) and treat unparseable output as a failed scan.
 - Restricted runners without outbound network access prevent the agent from verifying requirement text against the ASVS GitHub source; it is instructed to fall back to section-level citations in that case.
 - Audits on large codebases can take several minutes. Consider running on a schedule or scoping to PRs that touch sensitive paths rather than every push.
