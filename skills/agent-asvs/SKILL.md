@@ -132,230 +132,164 @@ Claim only what you actually did.
 
 ## ASVS 5.0 Requirements Reference
 
-When citing a requirement, use the exact ID (e.g., V1.2.5) and verify the description against the linked chapter. If unsure about a requirement's exact text, fetch the chapter from GitHub before citing it. If network access is unavailable, cite at section level (e.g., V1.2) rather than guessing a requirement number.
+<!-- BEGIN GENERATED ASVS REFERENCE -->
+<!-- Generated from OWASP/ASVS@v5.0.0 by tools/generate-asvs-reference.py. Do not edit by hand. -->
+
+ASVS v5.0.0: 17 chapters, 80 sections, 345 requirements.
+
+**Full requirement text for every chapter ships alongside this prompt in `reference/V<n>.md`.** Read the relevant file before citing a requirement ID — the index below gives section titles, requirement counts, and level ranges, but not the requirement text. Never cite from memory.
+
+If the reference files are not present (only `SKILL.md` was installed), fetch the chapter from https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/ instead. If neither is reachable, cite at section level (e.g. V1.2) rather than guessing a requirement number.
 
 ### V1: Encoding and Sanitization
-[Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x10-V1-Encoding-and-Sanitization.md)
+`reference/V1.md` — 5 sections, 30 requirements
 
-- **V1.1** Encoding/Sanitization Architecture — decode once, encode at output (L2)
-- **V1.2** Injection Prevention — 10 requirements (1.2.1–1.2.10)
-  - 1.2.1 Context-aware output encoding for HTML/XML (L1)
-  - 1.2.2 URL encoding for dynamic URLs, safe protocols only (L1)
-  - 1.2.3 JS/JSON output encoding (L1)
-  - 1.2.4 Parameterized queries / ORM for SQL/NoSQL/Cypher (L1)
-  - 1.2.5 OS command injection prevention (L1)
-  - 1.2.6 LDAP injection (L2), 1.2.7 XPath (L2), 1.2.8 LaTeX (L2), 1.2.9 Regex (L2), 1.2.10 CSV/Formula (L3)
-- **V1.3** Sanitization — 12 requirements (1.3.1–1.3.12)
-  - 1.3.1 HTML sanitization for WYSIWYG (L1)
-  - 1.3.2 No eval()/dynamic code execution with user input (L1)
-  - 1.3.6 SSRF protection via URL allowlist (L2)
-  - 1.3.7 Template injection prevention (L2)
-- **V1.4** Memory/String Safety — buffer overflows, integer overflows (L2)
-- **V1.5** Safe Deserialization — 3 requirements (1.5.1–1.5.3)
-  - 1.5.1 XML parsers hardened — external entity resolution (XXE) disabled (L1)
-  - 1.5.2 Deserialization of untrusted data enforces allowlisted types or safe formats (L2)
+- **V1.1** Encoding and Sanitization Architecture — 2 requirements (1.1.1–1.1.2), L2
+- **V1.2** Injection Prevention — 10 requirements (1.2.1–1.2.10), L1–L3
+- **V1.3** Sanitization — 12 requirements (1.3.1–1.3.12), L1–L3
+- **V1.4** Memory, String, and Unmanaged Code — 3 requirements (1.4.1–1.4.3), L2
+- **V1.5** Safe Deserialization — 3 requirements (1.5.1–1.5.3), L1–L3
 
 ### V2: Validation and Business Logic
-[Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x11-V2-Validation-and-Business-Logic.md)
+`reference/V2.md` — 4 sections, 13 requirements
 
-- **V2.1** Documentation — input validation rules documented (L1)
-- **V2.2** Input Validation — 3 requirements (2.2.1–2.2.3)
-  - 2.2.1 Positive validation / allowlist for input (L1)
-  - 2.2.2 Server-side validation enforced (L1)
-- **V2.3** Business Logic Security — sequential flow, limits, transactions (L1–L3)
-- **V2.4** Anti-automation — rate limiting, CAPTCHA, bot detection (L2–L3)
+- **V2.1** Validation and Business Logic Documentation — 3 requirements (2.1.1–2.1.3), L1–L2
+- **V2.2** Input Validation — 3 requirements (2.2.1–2.2.3), L1–L2
+- **V2.3** Business Logic Security — 5 requirements (2.3.1–2.3.5), L1–L3
+- **V2.4** Anti-automation — 2 requirements (2.4.1–2.4.2), L2–L3
 
 ### V3: Web Frontend Security
-[Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x12-V3-Web-Frontend-Security.md)
+`reference/V3.md` — 7 sections, 31 requirements
 
-- **V3.2** Unintended Content Interpretation — 3 requirements
-  - 3.2.1 Correct context rendering (Sec-Fetch headers, CSP sandbox) (L1)
-  - 3.2.2 Safe text rendering (createTextNode/textContent, not innerHTML) (L1)
-- **V3.3** Cookie Setup — 5 requirements (3.3.1–3.3.5)
-  - 3.3.1 Secure attribute + __Secure- prefix (L1)
-  - 3.3.2 SameSite attribute set per purpose (L2)
-  - 3.3.4 HttpOnly on non-client-accessible cookies (L2)
-- **V3.4** Browser Security Headers — 8 requirements (3.4.1–3.4.8)
-  - 3.4.1 HSTS with max-age >= 1 year (L1)
-  - 3.4.2 CORS Access-Control-Allow-Origin validated against allowlist (L1)
-  - 3.4.3 CSP with object-src 'none', base-uri 'none' (L2)
-  - 3.4.4 X-Content-Type-Options: nosniff (L2)
-  - 3.4.5 Referrer-Policy (L2)
-  - 3.4.6 frame-ancestors CSP directive (L2) — X-Frame-Options is obsolete
-- **V3.5** Browser Origin Separation — CSRF / cross-origin request forgery prevention (L1–L2)
+- **V3.1** Web Frontend Security Documentation — 1 requirement (3.1.1), L3
+- **V3.2** Unintended Content Interpretation — 3 requirements (3.2.1–3.2.3), L1–L3
+- **V3.3** Cookie Setup — 5 requirements (3.3.1–3.3.5), L1–L3
+- **V3.4** Browser Security Mechanism Headers — 8 requirements (3.4.1–3.4.8), L1–L3
+- **V3.5** Browser Origin Separation — 8 requirements (3.5.1–3.5.8), L1–L3
+- **V3.6** External Resource Integrity — 1 requirement (3.6.1), L3
+- **V3.7** Other Browser Security Considerations — 5 requirements (3.7.1–3.7.5), L2–L3
 
 ### V4: API and Web Service
-[Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x13-V4-API-and-Web-Service.md)
+`reference/V4.md` — 4 sections, 16 requirements
 
-- **V4.1** Generic API security — schema validation, content-type enforcement (L1–L2)
-- **V4.2** RESTful API — HTTP method validation, mass assignment prevention (L1–L2)
-- **V4.3** GraphQL — query depth/complexity limits, introspection disabled in prod (L2)
-- **V4.4** WebSocket — origin verification, authentication, message size limits (L2)
+- **V4.1** Generic Web Service Security — 5 requirements (4.1.1–4.1.5), L1–L3
+- **V4.2** HTTP Message Structure Validation — 5 requirements (4.2.1–4.2.5), L2–L3
+- **V4.3** GraphQL — 2 requirements (4.3.1–4.3.2), L2
+- **V4.4** WebSocket — 4 requirements (4.4.1–4.4.4), L1–L2
 
 ### V5: File Handling
-[Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x14-V5-File-Handling.md)
+`reference/V5.md` — 4 sections, 13 requirements
 
-- **V5.1** File Handling Documentation — permitted types, max sizes, malicious file handling documented (L2)
-- **V5.2** File Upload and Content — 6 requirements (5.2.1–5.2.6)
-  - 5.2.1 File size limits to prevent DoS (L1)
-  - 5.2.2 Extension matches expected type and content, e.g., magic bytes (L1)
-  - 5.2.3 Compressed files checked against max uncompressed size and file count (L2)
-- **V5.3** File Storage — 3 requirements (5.3.1–5.3.3)
-  - 5.3.1 Files in public folders not executable as server code (L1)
-  - 5.3.2 Internally generated file paths; user filenames validated — path traversal, LFI/RFI, SSRF (L1)
-  - 5.3.3 User-provided path info ignored server-side — zip slip (L3)
-- **V5.4** File Download — 3 requirements (5.4.1–5.4.3)
-  - 5.4.1 User-submitted filenames validated/ignored, filename set via Content-Disposition (L2)
-  - 5.4.3 Antivirus scanning for files from untrusted sources (L2)
+- **V5.1** File Handling Documentation — 1 requirement (5.1.1), L2
+- **V5.2** File Upload and Content — 6 requirements (5.2.1–5.2.6), L1–L3
+- **V5.3** File Storage — 3 requirements (5.3.1–5.3.3), L1–L3
+- **V5.4** File Download — 3 requirements (5.4.1–5.4.3), L2
 
 ### V6: Authentication
-[Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x15-V6-Authentication.md)
+`reference/V6.md` — 8 sections, 47 requirements
 
-- **V6.1** Authentication Documentation — rate limiting docs, context-specific word lists (L1–L2)
-- **V6.2** Password Security — 12 requirements (6.2.1–6.2.12)
-  - 6.2.1 Min 8 chars, 15 recommended (L1)
-  - 6.2.2 Users can change password (L1)
-  - 6.2.3 Change requires current + new password (L1)
-  - 6.2.4 Check against top 3000 passwords (L1)
-  - 6.2.5 No composition rules (L1)
-  - 6.2.8 No truncation or case transformation (L1)
-  - 6.2.9 Allow 64+ chars (L2)
-  - 6.2.12 Breach password check (L2)
-- **V6.3** General Auth Security — no default accounts, MFA at L2, hardware auth at L3
-  - 6.3.1 Anti-stuffing/brute-force controls (L1)
-  - 6.3.2 No default accounts (L1)
-  - 6.3.3 MFA required (L2), hardware-based at L3
-- **V6.4** Factor Lifecycle & Recovery — secure initial passwords, no secret questions (L1)
+- **V6.1** Authentication Documentation — 3 requirements (6.1.1–6.1.3), L1–L2
+- **V6.2** Password Security — 12 requirements (6.2.1–6.2.12), L1–L2
+- **V6.3** General Authentication Security — 8 requirements (6.3.1–6.3.8), L1–L3
+- **V6.4** Authentication Factor Lifecycle and Recovery — 6 requirements (6.4.1–6.4.6), L1–L3
+- **V6.5** General Multi-factor authentication requirements — 8 requirements (6.5.1–6.5.8), L2–L3
+- **V6.6** Out-of-Band authentication mechanisms — 4 requirements (6.6.1–6.6.4), L2–L3
+- **V6.7** Cryptographic authentication mechanism — 2 requirements (6.7.1–6.7.2), L3
+- **V6.8** Authentication with an Identity Provider — 4 requirements (6.8.1–6.8.4), L2
 
 ### V7: Session Management
-[Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x16-V7-Session-Management.md)
+`reference/V7.md` — 6 sections, 19 requirements
 
-- **V7.1** Session Documentation — timeout/lifetime policies documented (L2)
-- **V7.2** Fundamental Session Security — 4 requirements
-  - 7.2.1 Server-side token verification (L1)
-  - 7.2.2 Dynamic tokens, not static API keys (L1)
-  - 7.2.3 128-bit entropy for reference tokens (L1)
-  - 7.2.4 New token on authentication (L1)
-- **V7.3** Session Timeout — inactivity + absolute timeouts (L2)
-- **V7.4** Session Termination — 5 requirements
-  - 7.4.1 Effective logout/invalidation (L1)
-  - 7.4.2 Terminate sessions on account disable/delete (L1)
-- **V7.5** Defenses Against Session Abuse — re-auth for sensitive changes (L2–L3)
+- **V7.1** Session Management Documentation — 3 requirements (7.1.1–7.1.3), L2
+- **V7.2** Fundamental Session Management Security — 4 requirements (7.2.1–7.2.4), L1
+- **V7.3** Session Timeout — 2 requirements (7.3.1–7.3.2), L2
+- **V7.4** Session Termination — 5 requirements (7.4.1–7.4.5), L1–L2
+- **V7.5** Defenses Against Session Abuse — 3 requirements (7.5.1–7.5.3), L2–L3
+- **V7.6** Federated Re-authentication — 2 requirements (7.6.1–7.6.2), L2
 
 ### V8: Authorization
-[Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x17-V8-Authorization.md)
+`reference/V8.md` — 4 sections, 13 requirements
 
-- **V8.1** Authorization Documentation — function-level and data-specific access rules documented (L1–L3)
-- **V8.2** General Authorization Design — 4 requirements (8.2.1–8.2.4)
-  - 8.2.1 Function-level access restricted to explicitly permitted consumers (L1)
-  - 8.2.2 Data-specific access restricted — IDOR/BOLA prevention (L1)
-  - 8.2.3 Field-level access restricted — BOPLA prevention (L2)
-- **V8.3** Operation Level Authorization — 3 requirements (8.3.1–8.3.3)
-  - 8.3.1 Authorization enforced at a trusted service layer, not client-manipulable controls (L1)
-  - 8.3.2 Authorization changes applied immediately, or mitigated (e.g., for self-contained tokens) (L3)
-- **V8.4** Other Authorization Considerations — cross-tenant isolation (L2), admin interface security (L3)
+- **V8.1** Authorization Documentation — 4 requirements (8.1.1–8.1.4), L1–L3
+- **V8.2** General Authorization Design — 4 requirements (8.2.1–8.2.4), L1–L3
+- **V8.3** Operation Level Authorization — 3 requirements (8.3.1–8.3.3), L1–L3
+- **V8.4** Other Authorization Considerations — 2 requirements (8.4.1–8.4.2), L2–L3
 
 ### V9: Self-contained Tokens
-[Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x18-V9-Self-contained-Tokens.md)
+`reference/V9.md` — 2 sections, 7 requirements
 
-- **V9.1** Token Structure — signed with approved algorithms, no sensitive data in payload (L1–L2)
-- **V9.2** Token Claims — issuer/audience/expiry validated (L1–L2)
-- **V9.3** Token Lifecycle — revocation strategy for self-contained tokens (L2)
+- **V9.1** Token source and integrity — 3 requirements (9.1.1–9.1.3), L1
+- **V9.2** Token content — 4 requirements (9.2.1–9.2.4), L1–L2
 
 ### V10: OAuth and OIDC
-[Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x19-V10-OAuth-and-OIDC.md)
+`reference/V10.md` — 7 sections, 36 requirements
 
-- **V10.1** OAuth Client — PKCE, state parameter, redirect URI validation (L1–L2)
-- **V10.2** OAuth Resource Server — token validation, scope enforcement (L1–L2)
-- **V10.3** OIDC Relying Party — ID token validation (L2)
-- **V10.4** OAuth Authorization Server — 16 requirements (L1–L3)
+- **V10.1** Generic OAuth and OIDC Security — 2 requirements (10.1.1–10.1.2), L2
+- **V10.2** OAuth Client — 3 requirements (10.2.1–10.2.3), L2–L3
+- **V10.3** OAuth Resource Server — 5 requirements (10.3.1–10.3.5), L2–L3
+- **V10.4** OAuth Authorization Server — 16 requirements (10.4.1–10.4.16), L1–L3
+- **V10.5** OIDC Client — 5 requirements (10.5.1–10.5.5), L2
+- **V10.6** OpenID Provider — 2 requirements (10.6.1–10.6.2), L2
+- **V10.7** Consent Management — 3 requirements (10.7.1–10.7.3), L2
 
 ### V11: Cryptography
-[Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x20-V11-Cryptography.md)
+`reference/V11.md` — 7 sections, 24 requirements
 
-- **V11.1** Crypto Inventory & Documentation — key management policy, PQC migration plan (L2–L3)
-- **V11.2** Secure Implementation — industry-validated libs, crypto agility, min 128-bit security (L2–L3)
-- **V11.3** Encryption Algorithms — 5 requirements
-  - 11.3.1 No ECB or weak padding (L1)
-  - 11.3.2 Approved ciphers only, e.g., AES-GCM (L1)
-- **V11.4** Hashing — 4 requirements
-  - 11.4.1 Approved hash functions for signatures/HMAC/KDF — excludes broken hashes such as MD5 (L1)
-  - 11.4.2 Password storage with approved, computationally intensive KDF (e.g., argon2, scrypt, bcrypt) (L2)
-- **V11.5** Random Values — CSPRNG with 128-bit entropy (L2)
+- **V11.1** Cryptographic Inventory and Documentation — 4 requirements (11.1.1–11.1.4), L2–L3
+- **V11.2** Secure Cryptography Implementation — 5 requirements (11.2.1–11.2.5), L2–L3
+- **V11.3** Encryption Algorithms — 5 requirements (11.3.1–11.3.5), L1–L3
+- **V11.4** Hashing and Hash-based Functions — 4 requirements (11.4.1–11.4.4), L1–L2
+- **V11.5** Random Values — 2 requirements (11.5.1–11.5.2), L2–L3
+- **V11.6** Public Key Cryptography — 2 requirements (11.6.1–11.6.2), L2–L3
+- **V11.7** In-Use Data Cryptography — 2 requirements (11.7.1–11.7.2), L3
 
 ### V12: Secure Communication
-[Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x21-V12-Secure-Communication.md)
+`reference/V12.md` — 3 sections, 12 requirements
 
-- **V12.1** TLS Configuration — TLS 1.2+, strong cipher suites, valid certs (L1–L2)
-- **V12.2** Certificate Validation — chain validation, no self-signed in prod (L2)
-- **V12.3** Certificate Pinning — for high-security applications (L3)
+- **V12.1** General TLS Security Guidance — 5 requirements (12.1.1–12.1.5), L1–L3
+- **V12.2** HTTPS Communication with External Facing Services — 2 requirements (12.2.1–12.2.2), L1
+- **V12.3** General Service to Service Communication Security — 5 requirements (12.3.1–12.3.5), L2–L3
 
 ### V13: Configuration
-[Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x22-V13-Configuration.md)
+`reference/V13.md` — 4 sections, 21 requirements
 
-- **V13.1** Configuration Documentation — communication inventory, resource management (L2–L3)
-- **V13.2** Backend Communication — authenticated service-to-service, least privilege (L2)
-  - 13.2.3 No default credentials for services (L2)
-  - 13.2.4 Outbound request allowlists (L2)
-- **V13.3** Secret Management — 4 requirements
-  - 13.3.1 Key vault / secrets manager, no secrets in source code (L2)
-  - 13.3.2 Least privilege for secret access (L2)
-- **V13.4** Unintended Information Leakage — 7 requirements (13.4.1–13.4.7)
-  - 13.4.1 No .git/.svn folders accessible (L1)
-  - 13.4.2 Debug modes disabled in production (L2)
-  - 13.4.3 No directory listings (L2)
-  - 13.4.4 HTTP TRACE disabled in production (L2)
+- **V13.1** Configuration Documentation — 4 requirements (13.1.1–13.1.4), L2–L3
+- **V13.2** Backend Communication Configuration — 6 requirements (13.2.1–13.2.6), L2–L3
+- **V13.3** Secret Management — 4 requirements (13.3.1–13.3.4), L2–L3
+- **V13.4** Unintended Information Leakage — 7 requirements (13.4.1–13.4.7), L1–L3
 
 ### V14: Data Protection
-[Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x23-V14-Data-Protection.md)
+`reference/V14.md` — 3 sections, 13 requirements
 
-- **V14.1** General Data Protection — data classification, encryption at rest (L1–L2)
-- **V14.2** Client-side Data Protection — no sensitive data in browser storage (L1–L2)
-- **V14.3** Sensitive Private Data (PII) — access logging, retention policies (L2–L3)
+- **V14.1** Data Protection Documentation — 2 requirements (14.1.1–14.1.2), L2
+- **V14.2** General Data Protection — 8 requirements (14.2.1–14.2.8), L1–L3
+- **V14.3** Client-side Data Protection — 3 requirements (14.3.1–14.3.3), L1–L2
 
 ### V15: Secure Coding and Architecture
-[Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x24-V15-Secure-Coding-and-Architecture.md)
+`reference/V15.md` — 4 sections, 21 requirements
 
-- **V15.1** Secure Coding and Architecture Documentation — 5 requirements (15.1.1–15.1.5)
-  - 15.1.1 Documented risk-based remediation time frames for vulnerable third-party components (L1)
-  - 15.1.2 Inventory catalog / SBOM of all third-party libraries, from trusted maintained repositories (L2)
-  - 15.1.3 Documentation identifies time-consuming or resource-demanding functionality (L2)
-- **V15.2** Security Architecture and Dependencies — 5 requirements (15.2.1–15.2.5)
-  - 15.2.1 No components in use that breach the documented update/remediation time frames — known-vulnerable dependencies (L1)
-  - 15.2.2 Defenses against loss of availability from resource-demanding functionality (L2)
-  - 15.2.3 Production contains only required functionality, no extraneous exposure (L2)
-  - 15.2.4 Components and all transitive dependencies come from the expected repository — dependency confusion (L3)
-- **V15.3** Defensive Coding — 7 requirements (15.3.1–15.3.7)
-  - 15.3.1 Return only the required subset of fields from a data object (L1)
-  - 15.3.3 Mass assignment countermeasures — allowed fields per controller and action (L2)
-  - 15.3.5 Strict type and equality checks (L2), 15.3.6 prototype pollution prevention (L2), 15.3.7 HTTP parameter pollution defenses (L2)
-- **V15.4** Safe Concurrency — 4 requirements (15.4.1–15.4.4), all L3
-  - 15.4.1 Thread-safe types and synchronization for shared objects (L3)
-  - 15.4.2 Atomic check-and-act to prevent TOCTOU race conditions (L3)
-
-**Supply chain checks map to 15.1.2, 15.2.1, and 15.2.4 — not to V15.4**, which is Safe Concurrency:
-  - Check manifest files (`package.json`, `*.csproj`, `go.mod`, `requirements.txt`, `Gemfile`, `pom.xml`) for floating version ranges (`^`, `~`, `>=`, `*`) instead of pinned versions
-  - Check lockfiles (`package-lock.json`, `yarn.lock`, `go.sum`, `Pipfile.lock`, `Gemfile.lock`) exist and are committed alongside their manifests
-  - Check for a supply chain update policy: `.github/dependabot.yml`, `renovate.json`, or equivalent
-  - Check for use of `npm install --ignore-scripts` or `--no-scripts` protections in CI
-  - Absent lockfiles and no component inventory are findings under 15.1.2; components past their remediation window fall under 15.2.1
+- **V15.1** Secure Coding and Architecture Documentation — 5 requirements (15.1.1–15.1.5), L1–L3
+- **V15.2** Security Architecture and Dependencies — 5 requirements (15.2.1–15.2.5), L1–L3
+- **V15.3** Defensive Coding — 7 requirements (15.3.1–15.3.7), L1–L2
+- **V15.4** Safe Concurrency — 4 requirements (15.4.1–15.4.4), L3
 
 ### V16: Security Logging and Error Handling
-[Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x25-V16-Security-Logging-and-Error-Handling.md)
+`reference/V16.md` — 5 sections, 17 requirements
 
-- **V16.1** Security Logging Documentation — log inventory across stack (L2)
-- **V16.2** General Logging — 5 requirements (16.2.1–16.2.5) — metadata (who/what/when/where), UTC timestamps, structured format (L2)
-  - 16.2.5 Sensitive data protection in logs (L2)
-- **V16.3** Security Events — 4 requirements (16.3.1–16.3.4) — auth events, authz failures, bypass attempts logged (L2)
-  - 16.3.4 Unexpected errors and security control failures logged, e.g. backend TLS failures (L2)
-- **V16.4** Log Protection — 3 requirements (16.4.1–16.4.3) — log injection prevention, tamper protection (L2)
-- **V16.5** Error Handling — 4 requirements (16.5.1–16.5.4) — graceful failure, no internal detail leaked to users, last-resort error handler (L2–L3)
+- **V16.1** Security Logging Documentation — 1 requirement (16.1.1), L2
+- **V16.2** General Logging — 5 requirements (16.2.1–16.2.5), L2
+- **V16.3** Security Events — 4 requirements (16.3.1–16.3.4), L2
+- **V16.4** Log Protection — 3 requirements (16.4.1–16.4.3), L2
+- **V16.5** Error Handling — 4 requirements (16.5.1–16.5.4), L2–L3
 
 ### V17: WebRTC
-[Full chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x26-V17-WebRTC.md)
+`reference/V17.md` — 3 sections, 12 requirements
 
-- **V17.1** Peer Connection Security — DTLS-SRTP, ICE candidate filtering (L2)
-- **V17.2** Media Stream Security — consent, recording indicators (L2–L3)
+- **V17.1** TURN Server — 2 requirements (17.1.1–17.1.2), L2–L3
+- **V17.2** Media — 8 requirements (17.2.1–17.2.8), L2–L3
+- **V17.3** Signaling — 2 requirements (17.3.1–17.3.2), L2
+
+<!-- END GENERATED ASVS REFERENCE -->
 
 ## Mandatory Process
 
@@ -577,4 +511,4 @@ You're successful when:
 - Full specification: https://github.com/OWASP/ASVS/tree/v5.0.0/5.0/en
 - OWASP Cheat Sheets: https://cheatsheetseries.owasp.org/
 
-The requirements reference above includes direct GitHub links to each chapter. If you need the exact wording of a specific requirement, fetch the linked chapter file — do not guess or paraphrase from memory.
+Full requirement text for all 345 requirements ships with this skill in `reference/V<n>.md`. Read the relevant chapter file before citing a requirement — do not guess or paraphrase from memory. If the reference files are absent, fetch the chapter from the ASVS 5.0 source linked above.

@@ -29,9 +29,13 @@ Thanks for your interest in improving the ASVS Auditor agents. This is a prompt 
 ## Standards
 
 ### Requirement references
-- Every ASVS reference must use the exact `VX.Y.Z` format from the [ASVS 5.0 spec](https://github.com/OWASP/ASVS/tree/v5.0.0/5.0/en)
-- Verify IDs against the source chapter files before submitting
-- Include the GitHub chapter link when adding new section references
+- **Never edit `skills/*/reference/` or the generated block in `SKILL.md` by hand.** Both are produced by `tools/generate-asvs-reference.py` from the pinned ASVS tag, and CI fails on drift. To change them, change the generator and regenerate:
+  ```bash
+  python3 tools/generate-asvs-reference.py           # regenerate
+  python3 tools/generate-asvs-reference.py --check   # what CI runs
+  ```
+- Every ASVS reference you write elsewhere in a prompt must use the exact `VX.Y.Z` format and match the bundled `reference/V<n>.md`, which is the authority — check there before citing
+- If you believe the reference is wrong, the generator or the pinned tag is wrong; fix that, don't patch the output
 
 ### Testing
 - Run the agent against at least one real codebase before submitting
@@ -49,7 +53,8 @@ Cross-referenced against ASVS 5.0 V6 chapter source.
 
 ## What we won't merge
 
-- Changes that embed the full ASVS spec (too large for a prompt — see README for rationale)
+- Hand-written additions to the generated requirement reference (change the generator instead)
+- Requirement text pasted into `SKILL.md` itself — it belongs in `reference/`, where it loads on demand
 - Vulnerability patterns without ASVS requirement mapping
 - Framework-specific scanning that only works for one language
 - Anything that would cause the agent to fabricate findings

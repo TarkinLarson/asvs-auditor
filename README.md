@@ -28,11 +28,13 @@ AI-powered security auditor agent for [Claude Code](https://claude.com/claude-co
 ## Quick Start
 
 ```bash
-# Copy to your project
-mkdir -p .claude/skills/agent-asvs
-curl -sL https://raw.githubusercontent.com/TarkinLarson/asvs-auditor/v3.0.0/skills/agent-asvs/SKILL.md \
-  -o .claude/skills/agent-asvs/SKILL.md
+# Copy the skill (prompt + bundled ASVS requirement reference) into your project
+git clone --depth 1 --branch v3.0.0 https://github.com/TarkinLarson/asvs-auditor /tmp/asvs-auditor
+mkdir -p .claude/skills
+cp -r /tmp/asvs-auditor/skills/agent-asvs .claude/skills/
 ```
+
+The skill is a **directory**, not a single file — `SKILL.md` plus `reference/` holding the full ASVS 5.0 requirement text. `SKILL.md` alone still works (it falls back to fetching chapters from GitHub), but shipping the folder is what makes offline and restricted-runner scans cite requirements accurately.
 
 Then in Claude Code:
 
@@ -147,7 +149,7 @@ Notes:
 - Findings violated by absence (missing rate limiting, missing lockfile) carry `finding_type: "absence"` and are anchored to the file and line where the control belongs, so every finding has a location.
 - On large codebases the emitted findings array is capped at 50 with `findings_truncated: true`; the per-level counters and `total_findings` always reflect everything found, so `pass` gating stays correct even when the list is truncated.
 - Finding IDs are derived from requirement, repo-relative path, and line (e.g. `ASVS-V1.2.5-src/Services/ReportService.cs-87`) rather than a sequence number, so a finding keeps its identity between runs while it stays in the same place. Note that editing lines above a finding shifts its line number and therefore its ID — key on requirement plus path if you need identity to survive refactoring.
-- Restricted runners without outbound network access prevent the agent from verifying requirement text against the ASVS GitHub source; it is instructed to fall back to section-level citations in that case.
+- Restricted runners without outbound network access are fine as long as the `reference/` directory is committed alongside `SKILL.md` — requirement text is read from disk, so citations stay exact. Only a `SKILL.md`-only install degrades to section-level citations offline.
 - Audits on large codebases can take several minutes. Consider running on a schedule or scoping to PRs that touch sensitive paths rather than every push.
 
 ## How It Works
@@ -171,9 +173,18 @@ Static AI review is prone to reporting patterns that aren't real risk. The agent
 
 ### ASVS Requirement Accuracy
 
-The agents include an inline section-level reference of all 17 ASVS 5.0 chapters with requirement IDs, levels, and direct links to the [ASVS 5.0 source on GitHub](https://github.com/OWASP/ASVS/tree/v5.0.0/5.0/en). When the agent is uncertain about the exact wording of a requirement, it is instructed to fetch the chapter source rather than relying on training data.
+Each skill ships the **full text of all 345 ASVS 5.0 requirements** in `reference/V<n>.md`, one file per chapter, with exact requirement IDs and levels. `SKILL.md` carries only a section index — titles, requirement counts, level ranges — and instructs the agent to read the relevant chapter file before citing anything. Because supporting files load on demand, the full standard costs no context until the agent needs a specific chapter.
 
-This approach balances prompt size (embedding all 345 requirements would consume too much context) against accuracy (the agent has enough detail to cite correctly in most cases and knows where to verify).
+**The reference is generated, not hand-written.** `tools/generate-asvs-reference.py` derives it from the pinned [`OWASP/ASVS@v5.0.0`](https://github.com/OWASP/ASVS/tree/v5.0.0/5.0/en) source, and [a CI workflow](.github/workflows/asvs-reference-drift.yml) regenerates and diffs on every change plus weekly, so committed output cannot drift from the spec:
+
+```bash
+python3 tools/generate-asvs-reference.py          # regenerate
+python3 tools/generate-asvs-reference.py --check   # fail if committed output has drifted
+```
+
+This replaced a hand-maintained summary that had drifted from the standard in four separate releases — fabricated sections that do not exist in 5.0 (`V9.3`, `V12.3 "Certificate Pinning"`, `V5.5`, `V5.6`), whole chapters shifted by one (`V10`, `V14`), mis-mapped topics (`V4.2`, `V15.4`, `V17`), understated levels that changed CI gating, and 14 missing sections including 18 V6 requirements. The generator asserts the expected 17/80/345 chapter, section, and requirement totals and fails loudly on any unparsed row rather than guessing.
+
+Requirement text is quoted from OWASP ASVS under CC BY-SA 4.0; see [`skills/agent-asvs/reference/README.md`](skills/agent-asvs/reference/README.md) for attribution.
 
 ## ASVS 5.0 Coverage
 
@@ -232,7 +243,7 @@ Other languages are supported via general pattern matching — contributions for
 - **Static analysis only** — the agent reads source code; it doesn't execute, fuzz, or probe the running application
 - **LLM-dependent** — findings depend on the model's reasoning ability; complex multi-step vulnerabilities or logic flaws may be missed
 - **False positives and negatives** — AI may misidentify safe code as vulnerable or miss genuine issues; always verify findings manually
-- **Prompt size vs. accuracy tradeoff** — the full ASVS 5.0 spec (345 requirements) is not embedded; the agent may need to fetch chapter sources for precise requirement text
+- **Requirement text is bundled, but interpretation is not** — all 345 requirements ship with the skill, so citations are accurate; whether a given control genuinely satisfies a requirement is still the model's judgement
 - **Not a compliance certification** — a passing scan does not constitute ASVS compliance; formal assessment requires qualified auditors
 
 ## Contributing
@@ -249,7 +260,7 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE) — with one exception: the generated ASVS requirement text in `skills/*/reference/` quotes the [OWASP Application Security Verification Standard](https://github.com/OWASP/ASVS) and is licensed **CC BY-SA 4.0**, as documented in [`skills/agent-asvs/reference/README.md`](skills/agent-asvs/reference/README.md). The prompts, tooling, and documentation are MIT.
 
 ## References
 
