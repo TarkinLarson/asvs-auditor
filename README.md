@@ -138,6 +138,15 @@ Notes:
 
 - The skill must be present in the repo at `.claude/skills/agent-asvs-ci/SKILL.md` for `/agent-asvs-ci` to resolve.
 - Model output may occasionally include markdown fences or preamble despite instructions — keep the extraction step defensive (the `sed` filter above) and treat unparseable output as a failed scan.
+- Controls commonly enforced at a proxy, CDN, or gateway (security headers, TLS, rate limiting) are reported with `not_verifiable_in_code: true` and low confidence when no infrastructure config is present in the repo. They still count toward the violation totals and `pass` — if your edge enforces them, filter those findings out in your gating step rather than expecting the scanner to guess:
+
+  ```bash
+  jq '[.findings[] | select(.not_verifiable_in_code != true)] | length' scan.json
+  ```
+
+- Findings violated by absence (missing rate limiting, missing lockfile) carry `finding_type: "absence"` and are anchored to the file and line where the control belongs, so every finding has a location.
+- On large codebases the emitted findings array is capped at 50 with `findings_truncated: true`; the per-level counters and `total_findings` always reflect everything found, so `pass` gating stays correct even when the list is truncated.
+- Finding IDs are derived from requirement, file, and line (e.g. `ASVS-V1.2.5-ReportService.cs-87`), so they stay stable across runs and can be tracked by dashboards.
 - Restricted runners without outbound network access prevent the agent from verifying requirement text against the ASVS GitHub source; it is instructed to fall back to section-level citations in that case.
 - Audits on large codebases can take several minutes. Consider running on a schedule or scoping to PRs that touch sensitive paths rather than every push.
 
@@ -148,6 +157,17 @@ Notes:
 3. **Common vulnerability patterns** — targeted searches for injection, XSS, secrets, auth gaps, etc.
 4. **Configuration review** — security headers, TLS, dependencies, debug settings
 5. **Report generation** — findings with evidence, compliance matrix, prioritized remediation
+
+### False Positive Controls
+
+Static AI review is prone to reporting patterns that aren't real risk. The agents apply several constraints to reduce that:
+
+- **Reachability** — a dangerous sink is only reported once untrusted input can be traced to it. Sinks fed by constants or already-validated data are dropped, and untraceable paths are downgraded to medium confidence rather than reported as certain.
+- **Scope exclusions** — vendored, generated, and build-output directories are skipped. Test code and fixtures are only reported when they represent production risk, so a deliberately vulnerable fixture doesn't become a finding.
+- **Placeholder detection** — environment-variable indirection and obvious dummy values are not reported as hardcoded secrets.
+- **Infrastructure awareness** — controls that commonly live at a proxy, CDN, or gateway are marked as unverifiable from source rather than reported as confirmed violations.
+- **Confidence levels** — every finding carries `high`/`medium`/`low`, so you can filter before acting.
+- **Honest coverage** — a requirement is only reported as checked if it was actually searched for, and only as passed if the control was located and verified. Chapters whose technology is absent are marked not-applicable with a reason.
 
 ### ASVS Requirement Accuracy
 

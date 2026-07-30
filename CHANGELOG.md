@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/). Since these are prompt-based agents (not compiled software), versioning reflects meaningful changes to agent behavior, accuracy, or coverage.
 
+## [3.1.0] - Unreleased
+
+Scanner accuracy and CI robustness release. All CI JSON changes are additive — existing consumers keep working, and `pass` gating semantics are unchanged.
+
+### Fixed
+- **CI variant lacked the anti-fabrication calibration the interactive variant gained in 2.0.0** ([#5](https://github.com/TarkinLarson/asvs-auditor/issues/5)). "Be thorough — first scans always find issues" had no counterweight in the variant that gates pipelines, combined with a mandatory JSON output contract. Thoroughness is now defined as coverage of the standard, zero findings with full coverage is explicitly a valid `pass: true` result, and the false-positive cost is stated.
+- **"If you can't find the exact line, don't report it" contradicted mandated absence findings** ([#6](https://github.com/TarkinLarson/asvs-auditor/issues/6)). The same prompt required flagging missing lockfiles, rate limiting, CSRF protection, and security headers — none of which have a vulnerable line — so the model had to either break the rule or silently drop a whole finding class. Absence findings now anchor to the file and line where the control belongs and carry `finding_type: "absence"`; the rule is rescoped accordingly. Both variants also require stating what was searched for and not found, so an absence is verifiable rather than trusted.
+- **`checked_requirements` and `not_applicable` had no definitions, inviting fabricated compliance claims** ([#7](https://github.com/TarkinLarson/asvs-auditor/issues/7)). "Checked" now means the pattern class was actually searched for; "passed" means the control was located and verified, not merely that no violation was found; N/A requires the governing technology to be absent, with a reason recorded in the new `not_applicable_reasons` map. Unchecked requirements are omitted rather than padded.
+- **Interactive Core Beliefs contradicted its own calibration section** ([#15](https://github.com/TarkinLarson/asvs-auditor/issues/15)). "'No vulnerabilities found' means you didn't look hard enough" sat several sections above the 2.0.0 text walking that back. Reworded to the calibrated stance.
+
+### Added
+- **Scope exclusions** in both variants ([#8](https://github.com/TarkinLarson/asvs-auditor/issues/8)) — vendored, generated, and build-output paths are skipped by default; dependency manifests and lockfiles stay in scope for V15.4. Test code and fixtures are reported only where they represent production risk, so deliberately vulnerable fixtures no longer surface as findings.
+- **Infrastructure awareness** ([#9](https://github.com/TarkinLarson/asvs-auditor/issues/9)) — security headers (V3.4), TLS (V12), and rate limiting (V2.4) are frequently enforced at a proxy, CDN, or gateway and invisible to source review. When no infrastructure config is present in the repo these are reported as unverifiable from source at low confidence, with `not_verifiable_in_code: true` in the CI schema, instead of as confirmed violations. In-repo infrastructure config (nginx, ingress, Terraform, Dockerfile) is now scanned and reported definitively.
+- **Reachability requirement and placeholder-secret heuristics** ([#10](https://github.com/TarkinLarson/asvs-auditor/issues/10)) — `high` confidence now requires a traced path from an untrusted entry point to the sink; sinks fed only by constants or pre-validated data are dropped, and untraceable paths are downgraded rather than asserted. Environment-variable indirection, obvious dummy values, and `.example`/`.template` files are no longer reported as hardcoded secrets.
+- **Deduplication rule** ([#12](https://github.com/TarkinLarson/asvs-auditor/issues/12)) — one finding per root cause per file, with instance count and additional line numbers in the description. Previously undefined, so repeated flaws inflated or deflated the level counters unpredictably between runs.
+- **Output limits** ([#13](https://github.com/TarkinLarson/asvs-auditor/issues/13)) — emitted findings are capped at 50 (L1 first, then by confidence) with the new `scan_summary.findings_truncated` flag. The per-level counters and `total_findings` always reflect everything found, so `pass` gating stays correct when the array is capped. Prevents truncated, unparseable JSON on large codebases, which the README already required consumers to treat as a failed scan.
+- **Confidence in the interactive variant** ([#15](https://github.com/TarkinLarson/asvs-auditor/issues/15)) — previously CI-only, though the false-positive risk is identical. Interactive findings now carry the same `high`/`medium`/`low` rubric.
+- **Explicit target level in the interactive variant** ([#15](https://github.com/TarkinLarson/asvs-auditor/issues/15)) — defaults to L2, matching the CI variant, which already documented at-or-below gating semantics. Requirements above the target are reported in a separate hardening section.
+- CI absence-finding example in the output sample, plus `UNVERIFIABLE` and reasoned `N/A` rows in the interactive compliance matrix.
+- README: a False Positive Controls section, and CI notes covering the new fields with a `jq` example for filtering infrastructure-enforced findings out of gating.
+
+### Changed
+- **Finding IDs are derived from content, not sequential** ([#14](https://github.com/TarkinLarson/asvs-auditor/issues/14)) — `ASVS-V1.2.5-ReportService.cs-87` rather than `ASVS-001`. Sequential IDs renumbered on every run, making run-over-run tracking impossible for the dashboards the CI variant exists to feed. The schema shape is unchanged; only ID values differ, and nothing could have depended on the old unstable values.
+- **`files_scanned` is now defined** ([#11](https://github.com/TarkinLarson/asvs-auditor/issues/11)) as the count of distinct files actually read or matched, with an explicit instruction to emit `0` rather than guess a plausible number.
+- **`column` is now optional** ([#11](https://github.com/TarkinLarson/asvs-auditor/issues/11)) and must be omitted when not known exactly. It is false precision an LLM cannot reliably produce from search output, so the value was usually invented.
+
 ## [3.0.0] - 2026-07-30
 
 Breaking release: repackaged from slash commands to Agent Skills. Prompt content, agent behavior, and the CI JSON contract are unchanged — only the packaging and install paths changed.
@@ -73,6 +99,7 @@ Breaking release: the CI JSON output contract changed (severity field removed, p
 - Agent instructed to fetch chapter source from GitHub when unsure of exact requirement wording
 - False positive caveat added to "every app has vulnerabilities" personality trait
 
+[3.1.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v1.1.0...v2.0.0
 [1.1.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v1.0.0...v1.1.0
