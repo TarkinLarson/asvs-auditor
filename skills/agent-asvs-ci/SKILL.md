@@ -33,8 +33,8 @@ Use the exact requirement ID (e.g., V1.2.5) in every finding. If unsure of the e
 - **V12**: Secure Communication — V12.1 TLS config (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x21-V12-Secure-Communication.md)
 - **V13**: Configuration — V13.2 Backend comms (L2), V13.3 Secret management (L2), V13.4 Info leakage/debug (L1) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x22-V13-Configuration.md)
 - **V14**: Data Protection — V14.1 General (L1–L2), V14.2 Client-side (L1–L2), V14.3 PII (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x23-V14-Data-Protection.md)
-- **V15**: Secure Coding and Architecture — V15.1 Secure coding (L2), V15.4 Supply chain: check manifest files for floating ranges, lockfiles committed, dependabot/renovate config present (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x24-V15-Secure-Coding-and-Architecture.md)
-- **V16**: Security Logging and Error Handling — V16.2 Logging (L2), V16.3 Security events (L2), V16.4 Log protection (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x25-V16-Security-Logging-and-Error-Handling.md)
+- **V15**: Secure Coding and Architecture — V15.1 Documentation, incl. 15.1.2 SBOM/component inventory (L1–L3), V15.2 Architecture and dependencies, incl. 15.2.1 known-vulnerable components (L1) and 15.2.4 dependency confusion (L3), V15.3 Defensive coding: field subsetting, mass assignment, prototype pollution, HPP (L1–L2), V15.4 Safe concurrency and TOCTOU (L3). **Supply chain checks (floating ranges, missing lockfiles, dependabot/renovate) map to 15.1.2 and 15.2.1 — NOT V15.4** — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x24-V15-Secure-Coding-and-Architecture.md)
+- **V16**: Security Logging and Error Handling — V16.2 Logging (L2), V16.3 Security events, incl. 16.3.4 unexpected errors and control failures (L2), V16.4 Log protection (L2), V16.5 Error handling (L2–L3) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x25-V16-Security-Logging-and-Error-Handling.md)
 - **V17**: WebRTC — V17.1 Peer connections (L2), V17.2 Media streams (L2) — [chapter](https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/0x26-V17-WebRTC.md)
 
 ## Target Level and Gating
@@ -53,7 +53,7 @@ Skip these by default. Findings here are noise, not risk:
 - **Build output and generated code**: `dist/`, `build/`, `out/`, `bin/`, `obj/`, minified bundles, generated API clients, protobuf/OpenAPI output, `*.designer.cs`
 - Anything matched by `.gitignore`
 
-Dependency manifests and lockfiles remain **in scope** — V15.4 depends on reading them.
+Dependency manifests and lockfiles remain **in scope** — the supply chain requirements (15.1.2, 15.2.1) depend on reading them.
 
 **Test code and fixtures** (`test/`, `tests/`, `spec/`, `__tests__/`, `*.test.*`, `*_test.go`, fixture and seed data): report only production risk — a real credential committed to the repository, or a test helper reachable from production code. A deliberately vulnerable fixture is not a finding. When reporting from test code, say so in `description` and set `confidence` no higher than `medium`.
 
@@ -139,9 +139,9 @@ A truncated JSON document is an unusable scan. On a large codebase:
 ### Step 3: Configuration Review
 - Security headers (V3.4)
 - TLS configuration (V12)
-- Dependency vulnerabilities (V13.2)
+- Dependency vulnerabilities (V15.2.1): known-vulnerable components in manifests
 - Debug/development settings (V13.4)
-- **Supply chain** (V15.4): lockfiles present and committed, no floating version ranges in manifests, automated update policy (dependabot.yml / renovate.json)
+- **Supply chain** (V15.1.2, V15.2.4): component inventory/SBOM, lockfiles present and committed, no floating version ranges in manifests, automated update policy (dependabot.yml / renovate.json)
 
 ## OUTPUT FORMAT — STRICT JSON SCHEMA
 
