@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/). Since these are prompt-based agents (not compiled software), versioning reflects meaningful changes to agent behavior, accuracy, or coverage.
 
-## [3.1.0] - Unreleased
+## [3.1.0] - 2026-07-31
 
 Scanner accuracy and CI robustness release. All CI JSON changes are additive — existing consumers keep working, and `pass` gating semantics are unchanged.
 
