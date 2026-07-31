@@ -25,6 +25,16 @@ AI-powered security auditor agent for [Claude Code](https://claude.com/claude-co
 - Supports both interactive markdown reports and CI/CD JSON output
 - Language-agnostic — adapts scanning patterns to your stack
 
+## Requirements
+
+**To run an audit** — [Claude Code](https://claude.com/claude-code) and nothing else. The skill is prompt files plus bundled reference text: no runtime, no build step, nothing to install. Developed and tested against Claude Code 2.1.220.
+
+**To install from this repository** — `git`, since the Quick Start clones to get the `reference/` directory. Any other way of copying the skill folder works equally well.
+
+**To run the CI variant in a pipeline** — Node.js and npm (to install `@anthropic-ai/claude-code`), `jq` to parse the JSON output, and an `ANTHROPIC_API_KEY` secret. See [CI Integration](#ci-integration).
+
+**To regenerate the ASVS reference** (contributors only) — Python 3, standard library only, no packages to install; plus network access to github.com to fetch the pinned ASVS tag. Tested on 3.13.
+
 ## Quick Start
 
 ```bash
@@ -45,14 +55,14 @@ Then in Claude Code:
 
 ## Model Recommendation
 
-For best results, use the most capable available model:
-
 | Use case | Recommended model |
 |----------|-------------------|
-| Thorough audit, large codebase | Claude Opus 4.6 (`claude-opus-4-6`) |
-| Fast scan, smaller project | Claude Sonnet 4.6 (`claude-sonnet-4-6`) |
+| Thorough audit, large codebase | Claude Opus 5 (`claude-opus-5`) |
+| Fast scan, smaller project | Claude Sonnet 5 (`claude-sonnet-5`) |
 
-**Extended thinking**: For complex codebases where multi-step logic flaws or subtle authorization issues are a concern, enable extended thinking in Claude Code settings (`/config` → toggle Extended Thinking). This gives the auditor significantly more reasoning depth at the cost of speed.
+**Effort level**: raise the effort level in Claude Code settings (`/config`) for complex codebases where multi-step logic flaws or subtle authorization issues are a concern. It buys the auditor considerably more reasoning depth at the cost of speed and tokens, and matters more than it did on earlier models.
+
+**A note on Claude Fable 5.** It is Anthropic's most capable widely released model, so it looks like the obvious choice here — but it is explicitly **not intended for cybersecurity work**, and its safety classifiers specifically target that content. A security audit is exactly the workload most likely to trip them, and a refusal arrives as a successful response with no findings rather than an error, so a scan can appear to pass while having done nothing. Use Opus 5 or Sonnet 5 instead. Opus 5 also carries elevated cybersecurity safeguards; a benign source-code audit is well within bounds, but if a CI scan ever produces empty or unparseable output, a refusal is worth ruling out before you debug the pipeline.
 
 ## Variants
 
