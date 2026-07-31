@@ -39,7 +39,7 @@ AI-powered security auditor agent for [Claude Code](https://claude.com/claude-co
 
 ```bash
 # Copy the skill (prompt + bundled ASVS requirement reference) into your project
-git clone --depth 1 --branch v3.0.0 https://github.com/TarkinLarson/asvs-auditor /tmp/asvs-auditor
+git clone --depth 1 --branch v3.1.0 https://github.com/TarkinLarson/asvs-auditor /tmp/asvs-auditor
 mkdir -p .claude/skills
 cp -r /tmp/asvs-auditor/skills/agent-asvs .claude/skills/
 ```
