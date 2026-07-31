@@ -100,6 +100,25 @@ Cowork and cloud sessions don't read local `.claude` directories. To use the aud
 /agent-asvs-ci target L1                        # Gate on baseline violations only
 ```
 
+### Windows: Git Bash mangles the slash command
+
+Running the auditor headless from **Git Bash on Windows** silently fails to invoke the skill:
+
+```bash
+claude -p "/agent-asvs-ci"     # does NOT work under Git Bash
+```
+
+MSYS rewrites any argument that looks like a Unix absolute path before handing it to a native Windows executable, so `/agent-asvs-ci` arrives as `C:/Program Files/Git/agent-asvs-ci`. Claude treats it as a missing file path, answers that the path doesn't exist, and exits 0 — so a pipeline sees success and an empty report. Quoting the argument or passing it through a variable does **not** help; the rewrite happens either way.
+
+Any of these work:
+
+```bash
+MSYS_NO_PATHCONV=1 claude -p "/agent-asvs-ci"   # disable the rewrite for this call
+claude -p "//agent-asvs-ci"                      # a doubled leading slash is passed through as one
+```
+
+Or run it from PowerShell or `cmd`, which do no such rewriting. Linux and macOS are unaffected, including the GitHub Actions example below.
+
 ## CI Integration
 
 The CI variant outputs strict JSON with a `scan_summary.pass` boolean. Run Claude Code headless and gate the pipeline on it:
