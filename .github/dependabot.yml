@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # Keep GitHub Actions pinned to current commit SHAs. The workflows pin actions
+  # to a full SHA (with a version comment); Dependabot bumps the SHA and the
+  # comment together when a new release ships. No other package ecosystem is in
+  # use — the tooling is Python standard library only.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: ci
+    groups:
+      github-actions:
+        patterns:
+          - "*"
