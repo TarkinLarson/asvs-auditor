@@ -7,12 +7,11 @@ on:
       - 'skills/*/SKILL.md'
       - 'tools/generate-asvs-reference.py'
       - '.github/workflows/asvs-reference-drift.yml'
+  # No path filter: this job is a required status check on main, so it must
+  # report on every pull request. It is a few seconds and passes trivially when
+  # nothing has drifted — a path filter here would leave unrelated PRs with a
+  # required check that never runs, and therefore permanently unmergeable.
   pull_request:
-    paths:
-      - 'skills/*/reference/**'
-      - 'skills/*/SKILL.md'
-      - 'tools/generate-asvs-reference.py'
-      - '.github/workflows/asvs-reference-drift.yml'
   schedule:
     # Weekly, so an upstream ASVS revision to the pinned tag surfaces on its own.
     - cron: '0 6 * * 1'
