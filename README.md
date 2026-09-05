@@ -3,6 +3,9 @@
 [![ASVS Version](https://img.shields.io/badge/ASVS-5.0-blue)](https://github.com/OWASP/ASVS/tree/v5.0.0)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-agent_skill-purple)](https://claude.com/claude-code)
+[![ASVS reference drift](https://github.com/TarkinLarson/asvs-auditor/actions/workflows/asvs-reference-drift.yml/badge.svg)](https://github.com/TarkinLarson/asvs-auditor/actions/workflows/asvs-reference-drift.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/TarkinLarson/asvs-auditor/badge)](https://scorecard.dev/viewer/?uri=github.com/TarkinLarson/asvs-auditor)
+[![Contributor Covenant 2.1](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 AI-powered security auditor agent for [Claude Code](https://claude.com/claude-code) that tests your application against the [OWASP Application Security Verification Standard (ASVS) 5.0](https://github.com/OWASP/ASVS/tree/v5.0.0).
 
