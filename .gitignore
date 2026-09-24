@@ -1,2 +1,8 @@
 # Local working notes — session scratch, design drafts, not for the repo
 docs/notes/
+
+# Smoke-test artifacts — evidence for PRs, not for the repo
+.smoke/
+
+# Python bytecode from running tools/
+__pycache__/
