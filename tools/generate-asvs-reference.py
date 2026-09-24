@@ -16,6 +16,12 @@ defined in MARKER_BEGIN / MARKER_END.
 Usage:
   python3 tools/generate-asvs-reference.py            # write
   python3 tools/generate-asvs-reference.py --check     # exit 1 if outputs drift
+  python3 tools/generate-asvs-reference.py --source ../asvs   # use a local checkout
+
+By default the chapter list comes from the GitHub contents API, which is rate
+limited and unavailable on a runner with no GitHub credentials. `--source`
+reads a local OWASP/ASVS checkout instead, and refuses one that is not at the
+pinned tag so the output's provenance is unchanged either way.
 
 Requires only the standard library so it runs on a bare CI runner.
 """
@@ -26,6 +32,7 @@ import argparse
 import difflib
 import json
 import re
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -46,6 +53,15 @@ COMPACT_SKILLS = {"agent-asvs-ci"}
 
 MARKER_BEGIN = "<!-- BEGIN GENERATED ASVS REFERENCE -->"
 MARKER_END = "<!-- END GENERATED ASVS REFERENCE -->"
+
+# Reference paths in the prompt are written against ${CLAUDE_SKILL_DIR}, the
+# directory holding SKILL.md. A bare `reference/V1.md` is relative to the
+# working directory, which during an audit is the project being audited, not the
+# skill — so the agent could not find the requirement text and fell back to
+# section-level citations, exactly the failure the bundled reference exists to
+# prevent. Claude Code substitutes this variable for both project skills and
+# plugin skills.
+REFERENCE_DIR = "${CLAUDE_SKILL_DIR}/reference"
 
 # Expected totals, asserted so a silent parse regression cannot ship.
 EXPECTED_CHAPTERS = 17
@@ -74,16 +90,58 @@ def fetch(url: str) -> str:
         raise ParseError(f"network error fetching {url}: {exc.reason}") from exc
 
 
-def chapter_files() -> list[tuple[int, str]]:
+def chapter_dir(source: Path) -> Path:
+    """Resolve a local ASVS checkout to the directory holding the chapter files."""
+    for candidate in (source / CHAPTER_DIR, source):
+        if candidate.is_dir() and any(CHAPTER_FILE_RE.match(p.name) for p in candidate.iterdir()):
+            return candidate
+    raise ParseError(f"no ASVS chapter files under {source} (looked in {CHAPTER_DIR}/ and the path itself)")
+
+
+def verify_source_revision(source: Path) -> None:
+    """Refuse a local checkout that is not at the pinned tag.
+
+    Generating from a pinned tag is the whole provenance argument, so a local
+    source has to prove it is that tag rather than whatever the working copy
+    happens to be sitting on.
+    """
+
+    def git(*args: str) -> str:
+        result = subprocess.run(
+            ("git", "-C", str(source), *args), capture_output=True, text=True, check=False
+        )
+        if result.returncode != 0:
+            detail = result.stderr.strip() or "git command failed"
+            raise ParseError(f"{source} is not a usable git checkout: {detail}")
+        return result.stdout.strip()
+
+    head = git("rev-parse", "HEAD")
+    pinned = git("rev-parse", "--verify", f"{ASVS_TAG}^{{commit}}")
+    if head != pinned:
+        raise ParseError(
+            f"{source} is at {head[:12]}, not {ASVS_TAG} ({pinned[:12]}). "
+            f"Run: git -C {source} checkout {ASVS_TAG}"
+        )
+
+
+def chapter_text(filename: str, source: Path | None) -> str:
+    if source is None:
+        return fetch(f"{RAW_BASE}/{filename}")
+    return (chapter_dir(source) / filename).read_text(encoding="utf-8")
+
+
+def chapter_files(source: Path | None = None) -> list[tuple[int, str]]:
     """Return [(chapter_number, filename)] for the pinned tag, chapter order."""
-    listing = json.loads(fetch(API_CONTENTS))
+    if source is None:
+        names = [e["name"] for e in json.loads(fetch(API_CONTENTS)) if e.get("type") == "file"]
+    else:
+        names = [p.name for p in chapter_dir(source).iterdir() if p.is_file()]
+
     found: list[tuple[int, str]] = []
-    for entry in listing:
-        if entry.get("type") != "file":
-            continue
-        m = CHAPTER_FILE_RE.match(entry["name"])
+    for name in names:
+        m = CHAPTER_FILE_RE.match(name)
         if m:
-            found.append((int(m.group(1)), entry["name"]))
+            found.append((int(m.group(1)), name))
     found.sort(key=lambda t: t[0])
     if len(found) != EXPECTED_CHAPTERS:
         raise ParseError(
@@ -277,10 +335,16 @@ def render_index(chapters: list[dict], compact: bool) -> str:
         "",
         f"ASVS {ASVS_TAG}: {len(chapters)} chapters, {total_sections} sections, {total_reqs} requirements.",
         "",
-        "**Full requirement text for every chapter ships alongside this prompt in "
-        "`reference/V<n>.md`.** Read the relevant file before citing a requirement ID — "
-        "the index below gives section titles, requirement counts, and level ranges, "
-        "but not the requirement text. Never cite from memory.",
+        f"**Full requirement text for every chapter ships alongside this prompt in "
+        f"`{REFERENCE_DIR}/V<n>.md`.** Read the relevant file before citing a requirement "
+        f"ID — the index below gives section titles, requirement counts, and level ranges, "
+        f"but not the requirement text. Never cite from memory.",
+        "",
+        f"`${{CLAUDE_SKILL_DIR}}` is the directory this prompt was loaded from. Paths are "
+        f"written against it because the working directory during an audit is the project "
+        f"being audited, so a bare `reference/V<n>.md` would not resolve. If the variable "
+        f"reaches you unsubstituted, read `reference/V<n>.md` relative to this prompt's own "
+        f"directory instead.",
         "",
         f"If the reference files are not present (only `SKILL.md` was installed), fetch the "
         f"chapter from {BLOB_BASE}/ instead. If neither is reachable, cite at section level "
@@ -296,10 +360,14 @@ def render_index(chapters: list[dict], compact: bool) -> str:
                 f"{level_range([r['level'] for r in s['requirements']])})"
                 for s in c["sections"]
             ]
-            out.append(f"- **V{n}: {c['title']}** ({creqs} reqs) — " + "; ".join(parts) + f" — `reference/V{n}.md`")
+            out.append(
+                f"- **V{n}: {c['title']}** ({creqs} reqs) — "
+                + "; ".join(parts)
+                + f" — `{REFERENCE_DIR}/V{n}.md`"
+            )
         else:
             out.append(f"### V{n}: {c['title']}")
-            out.append(f"`reference/V{n}.md` — {len(c['sections'])} sections, {creqs} requirements")
+            out.append(f"`{REFERENCE_DIR}/V{n}.md` — {len(c['sections'])} sections, {creqs} requirements")
             out.append("")
             for s in c["sections"]:
                 reqs = s["requirements"]
@@ -346,12 +414,25 @@ def build_outputs(chapters: list[dict]) -> dict[Path, str]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--check", action="store_true", help="verify committed files match a fresh generation")
+    ap.add_argument(
+        "--source",
+        type=Path,
+        metavar="DIR",
+        help=f"local OWASP/ASVS checkout at {ASVS_TAG} to read instead of fetching from GitHub",
+    )
     args = ap.parse_args()
 
     try:
-        chapters = [parse_chapter(n, f, fetch(f"{RAW_BASE}/{f}")) for n, f in chapter_files()]
+        if args.source is not None:
+            verify_source_revision(args.source)
+        chapters = [
+            parse_chapter(n, f, chapter_text(f, args.source)) for n, f in chapter_files(args.source)
+        ]
     except ParseError as exc:
         print(f"error: {exc}", file=sys.stderr)
+        return 2
+    except OSError as exc:
+        print(f"error: reading the local ASVS source failed: {exc}", file=sys.stderr)
         return 2
 
     total_sections = sum(len(c["sections"]) for c in chapters)

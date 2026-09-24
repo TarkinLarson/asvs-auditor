@@ -1,0 +1,324 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/TarkinLarson/asvs-auditor/blob/main/schema/asvs-report.schema.json",
+  "title": "ASVS Auditor CI report",
+  "description": "Output contract for the agent-asvs-ci skill. Versioned with the skill: additive changes are minor releases, field removals or meaning changes are major.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "scan_metadata",
+    "scan_summary",
+    "findings",
+    "compliance_summary",
+    "recommendations"
+  ],
+  "properties": {
+    "scan_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "timestamp",
+        "asvs_version",
+        "asvs_level",
+        "scanner",
+        "languages_detected",
+        "frameworks_detected"
+      ],
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "description": "ISO-8601 UTC, taken from the system clock, never guessed.",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+        },
+        "asvs_version": {
+          "type": "string",
+          "const": "5.0"
+        },
+        "asvs_level": {
+          "type": "string",
+          "enum": [
+            "L1",
+            "L2",
+            "L3"
+          ],
+          "description": "The level the scan targeted. Violations at or below it decide the gate."
+        },
+        "scanner": {
+          "type": "string",
+          "const": "asvs-auditor-ci"
+        },
+        "languages_detected": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "frameworks_detected": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "scan_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "files_scanned",
+        "total_findings",
+        "l1_violations",
+        "l2_violations",
+        "l3_violations",
+        "unverifiable_findings",
+        "findings_truncated",
+        "pass",
+        "pass_including_unverifiable"
+      ],
+      "properties": {
+        "files_scanned": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Count of files actually read. null when it cannot be determined. 0 is reserved for a scan that never ran, and pairs with `error`."
+        },
+        "total_findings": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Everything found after deduplication, including findings dropped by the 50-finding emit cap."
+        },
+        "l1_violations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "l2_violations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "l3_violations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unverifiable_findings": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Findings carrying not_verifiable_in_code. Exactly the gap between the two gate booleans."
+        },
+        "findings_truncated": {
+          "type": "boolean",
+          "description": "True only when the 50-finding emit cap dropped something. Deduplication does not set it."
+        },
+        "pass": {
+          "type": "boolean",
+          "description": "No verifiable violation at or below the target level. Gate on this unless unverified should mean unsafe."
+        },
+        "pass_including_unverifiable": {
+          "type": "boolean",
+          "description": "No violation at all at or below the target level, including controls that could not be checked from source."
+        },
+        "error": {
+          "type": "string",
+          "description": "Present only when the scan could not run properly."
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "asvs_requirement",
+          "asvs_title",
+          "asvs_level",
+          "title",
+          "file",
+          "line",
+          "code_snippet",
+          "description",
+          "impact",
+          "remediation",
+          "cwe_id",
+          "confidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Derived from content, never a sequence number: ASVS-<requirement>-<repo-relative path>-<line>.",
+            "pattern": "^ASVS-V[0-9]{1,2}(\\.[0-9]{1,2}){1,2}-.+-[0-9]+$"
+          },
+          "asvs_requirement": {
+            "type": "string",
+            "description": "Requirement ID, e.g. V1.2.4. A section-level ID such as V1.2 is permitted only as the documented fallback when the bundled requirement text is unreachable — inventing a requirement number is worse than citing the section.",
+            "pattern": "^V[0-9]{1,2}(\\.[0-9]{1,2}){1,2}$"
+          },
+          "asvs_title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "asvs_level": {
+            "type": "string",
+            "enum": [
+              "L1",
+              "L2",
+              "L3"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "finding_type": {
+            "type": "string",
+            "enum": [
+              "presence",
+              "absence"
+            ],
+            "description": "Optional. `absence` for a control that is missing; omitted or `presence` otherwise."
+          },
+          "file": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Repo-relative path that exists in the scanned tree. For an absence finding, where the control belongs."
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "column": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Optional. Omitted unless known exactly; never estimated."
+          },
+          "code_snippet": {
+            "type": "string",
+            "minLength": 1
+          },
+          "context": {
+            "type": "string",
+            "description": "At most 5 lines of surrounding code."
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "impact": {
+            "type": "string",
+            "minLength": 1
+          },
+          "remediation": {
+            "type": "string",
+            "minLength": 1
+          },
+          "cwe_id": {
+            "type": "string",
+            "pattern": "^CWE-[0-9]+$"
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "not_verifiable_in_code": {
+            "type": "boolean",
+            "description": "Optional, and omitted entirely unless true. Marks a control that may be enforced at a proxy, CDN, gateway, or in documentation. Excluded from `pass`."
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "compliance_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checked_requirements",
+        "passed_requirements",
+        "failed_requirements",
+        "not_applicable",
+        "not_applicable_reasons"
+      ],
+      "properties": {
+        "checked_requirements": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^V[0-9]{1,2}(\\.[0-9]{1,2}){1,2}$"
+          },
+          "description": "Requirements whose pattern class was actually searched for and evaluated. Appearing in the reference is not 'checked'."
+        },
+        "passed_requirements": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^V[0-9]{1,2}(\\.[0-9]{1,2}){1,2}$"
+          },
+          "description": "Controls located and verified. Failing to find a violation is not verification."
+        },
+        "failed_requirements": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^V[0-9]{1,2}(\\.[0-9]{1,2}){1,2}$"
+          }
+        },
+        "not_applicable": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^V[0-9]{1,2}(\\.[0-9]{1,2})?$"
+          },
+          "description": "Section-level IDs for technology that is absent, e.g. V17 or V4.3."
+        },
+        "not_applicable_reasons": {
+          "type": "object",
+          "description": "One entry per not_applicable ID, keyed identically.",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "priority",
+          "action",
+          "findings_addressed"
+        ],
+        "properties": {
+          "priority": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "action": {
+            "type": "string",
+            "minLength": 1
+          },
+          "findings_addressed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Finding ids from this report's findings array."
+          }
+        }
+      }
+    }
+  }
+}

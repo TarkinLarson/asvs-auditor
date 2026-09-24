@@ -38,6 +38,13 @@ Thanks for your interest in improving the ASVS Auditor agents. This is a prompt 
 - If you believe the reference is wrong, the generator or the pinned tag is wrong; fix that, don't patch the output
 
 ### Testing
+- Start with `tools/smoke.sh`, which runs the checks in cost order. Stage 0 is free and offline-capable; stages 1 and 2 call the model and must be requested explicitly:
+  ```bash
+  tools/smoke.sh                                      # static checks only — no model calls
+  tools/smoke.sh --stages 0,1                         # plus a minimal skill-load check
+  tools/smoke.sh --stages 0,1,2 --target ~/src/app    # plus a real scan of a target tree
+  ```
+  Stage 2 copies the target to a temporary directory, scans the copy, and fails if the tree changed — so a prompt edit that makes the auditor write to the code it is auditing is caught before review. Output lands in `.smoke/` (gitignored) for pasting into your PR.
 - Run the agent against at least one real codebase before submitting, and say in your PR what you ran it against with the relevant output pasted in — a prompt change with no evidence of a run is unreviewable
 - For the CI variant, validate that the output is parseable JSON
 - Check that findings include file paths, line numbers, and correct requirement IDs
