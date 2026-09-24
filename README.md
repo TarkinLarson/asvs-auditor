@@ -30,7 +30,7 @@ AI-powered security auditor agent for [Claude Code](https://claude.com/claude-co
 
 ## Requirements
 
-**To run an audit** — [Claude Code](https://claude.com/claude-code) and nothing else. The skill is prompt files plus bundled reference text: no runtime, no build step, nothing to install. Developed and tested against Claude Code 2.1.220.
+**To run an audit** — [Claude Code](https://claude.com/claude-code) and nothing else. The skill is prompt files plus bundled reference text: no runtime, no build step, nothing to install. Developed and tested against Claude Code 2.1.281.
 
 **To install from this repository** — `git`, since the Quick Start clones to get the `reference/` directory. Any other way of copying the skill folder works equally well.
 
@@ -42,7 +42,7 @@ AI-powered security auditor agent for [Claude Code](https://claude.com/claude-co
 
 ```bash
 # Copy the skill (prompt + bundled ASVS requirement reference) into your project
-git clone --depth 1 --branch v3.1.0 https://github.com/TarkinLarson/asvs-auditor /tmp/asvs-auditor
+git clone --depth 1 --branch v3.2.0 https://github.com/TarkinLarson/asvs-auditor /tmp/asvs-auditor
 mkdir -p .claude/skills
 cp -r /tmp/asvs-auditor/skills/agent-asvs .claude/skills/
 ```
@@ -88,6 +88,7 @@ If you prefer an isolated context window for long scans of large codebases, the 
 mkdir -p .claude/skills
 cp -r skills/agent-asvs .claude/skills/
 cp -r skills/agent-asvs-ci .claude/skills/   # optional
+cp -r schema .                               # only if you gate CI on the JSON output
 ```
 
 ### Global (all projects)
