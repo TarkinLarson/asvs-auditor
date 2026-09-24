@@ -4,6 +4,39 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/). Since these are prompt-based agents (not compiled software), versioning reflects meaningful changes to agent behavior, accuracy, or coverage.
 
+## [3.2.0] - 2026-09-24
+
+Accuracy release. The bundled requirement reference added in 3.1.0 was never actually reachable during a scan, so every finding was cited at section level — the documented offline fallback — rather than at requirement level. No JSON field was added, removed, or changed in meaning, but **the values of `asvs_requirement` and therefore of every finding `id` change on the first run after upgrading**; see the upgrade note below.
+
+### Fixed — the bundled reference was unreachable, so citations silently degraded
+
+- **Requirement text was looked up at a path relative to the working directory.** Both prompts pointed at `reference/V<n>.md`, and during an audit the working directory is the project being audited, not the skill, so the requirement text was never there. Paths are now written against `${CLAUDE_SKILL_DIR}`, which Claude Code substitutes for project skills and plugin skills alike, with the relative path documented as a fallback for contexts that do not substitute it.
+- **Even with a correct path, the read was denied.** `reference/` sits outside the audited project, so it is not covered by the working-directory reads a session permits by default. A pipeline running a restrictive permission mode got a denied `Read`, no error surfaced, and the scan carried on citing sections. Both skills now pre-approve the reads they need through `allowed-tools`.
+- Measured on a fixture containing a SQL injection, a hardcoded key and debug mode enabled, scanned with `--permission-mode dontAsk`: exact requirement IDs went from 0 of 6 findings to 8 of 8, and all 8 levels matched the bundled reference. This is the failure the generated reference existed to prevent, and it was present in every 3.1.0 scan.
+- **Findings were anchored to files that do not exist.** The documentation-requirement instruction listed `README`, `SECURITY.md` and `docs/` as anchors, so a scan of a two-file fixture duly reported a finding in a `SECURITY.md` that was not in the tree. A fabricated location cannot be checked by the reader and discredits the findings that are real. Both variants now require that a cited path be one actually seen in the tree, falling back to the repository root, and Evidence Standards states the rule for every finding type.
+
+### Added
+
+- **`schema/asvs-report.schema.json`** — the CI output contract as JSON Schema (draft-07). Previously the only definition of the format was prose inside the prompt. Hand it to Claude Code's `--json-schema` and the shape is enforced rather than requested, with the report returned in the response envelope's `structured_output` field; or use it on its own to validate a report with `check-jsonschema`, `ajv`, or any standard validator. Versioned with the skill: added fields are a minor release, removed fields or changed meanings a major one. Draft-07 rather than 2020-12 because the CLI's validator cannot resolve the 2020-12 meta-schema and rejects the file outright.
+  - Measured with and without the schema on the same fixture at identical settings: 8 findings either way, 8 of 8 exact requirement IDs, 8 of 8 matching levels, 8 of 8 paths present, average remediation text slightly longer with the schema, cost within 5%. No degradation from constraining the output. The unconstrained reply carried markdown fences — the hazard the README's `sed` filter existed for — and put requirement-level IDs in `not_applicable` where Rule 17 reserves section-level ones, failing validation in six places. One run per arm, so read it as no sign of harm rather than proof of equivalence.
+  - The requirement-ID pattern deliberately admits section-level IDs such as `V1.2`, because the documented fallback when the bundled text is unreachable is to cite the section rather than invent a requirement number. Constraining it further would force exactly the fabrication the fallback avoids.
+- **`tools/smoke.sh`** — a pre-release check that runs in cost order: static checks for free, then a minimal skill-load check, then a real scan of a target directory. The scan runs against a temporary copy and fails if the copy changed, so a prompt edit that makes the auditor write to the code it audits is caught before review. It also fails a scan that read no files, which is what a refusal looks like, and validates the emitted report against the committed schema when the `jsonschema` package is importable.
+- **`tools/check-skills.py`** — frontmatter and packaging validation. Claude Code silently ignores unrecognised frontmatter fields and loads a skill with no fields at all when the YAML fails to parse, so a mistyped `allowed-tools` restricts nothing and reports nothing. Also checks each skill ships all 17 reference chapters, since a `SKILL.md`-only install degrades to section-level citations.
+- **`--source` on `tools/generate-asvs-reference.py`** — regenerate from a local `OWASP/ASVS` checkout instead of the GitHub contents API, which is rate limited and unavailable to a runner without GitHub credentials. It refuses a checkout that is not at the pinned tag, so provenance is unchanged, and output is byte-identical either way.
+
+### Changed
+
+- **The CI variant can no longer write files.** `Write`, `Edit` and `NotebookEdit` are removed through `disallowed-tools`: an auditor has no business modifying the code it is auditing, and the variant's contract is JSON on stdout. Adding `allowed-tools` takes nothing away — it only pre-approves — so the interactive variant keeps its full tool set.
+- **The README's CI example no longer runs the scan with `--permission-mode acceptEdits`**, which granted an unattended auditor permission to modify the repository it was auditing. It now uses `--permission-mode dontAsk --permission-prompts none`, verified against a fixture to leave the target tree byte-for-byte unchanged. `--permission-prompts none` needs Claude Code 2.1.259 or later.
+- The README's CI example extracts the report from `.structured_output` instead of scraping between the first `{` and the last `}` with `sed`, and records what the schema cannot do: it checks shape, not truth, so the `files_scanned` and `checked_requirements` gate is still required.
+- `CONTRIBUTING.md` points at `tools/smoke.sh` for the run evidence it already asked contributors to paste into a PR.
+
+### Upgrade note — finding identity changes once
+
+Gate semantics, field names and JSON shape are all unchanged, so no pipeline needs editing. But because citations move from section level to requirement level, `asvs_requirement` goes from e.g. `V1.2` to `V1.2.4`, and finding IDs derived from it change with it (`ASVS-V1.2-app.py-11` becomes `ASVS-V1.2.4-app.py-11`). A dashboard that tracks findings by ID will show every finding as new on the first run after upgrading, once. Per-level violation counts and both gate booleans are computed the same way and should not move except where a more precise citation corrects a level that was previously inferred from the section.
+
+One known limitation: the optional subagent install documented in the README copies `SKILL.md` into `.claude/agents/`, which is not a skill, so `${CLAUDE_SKILL_DIR}` may reach the model unsubstituted. The prompt tells it to fall back to reading `reference/` relative to the prompt's own directory, and that install form already fetched chapters over the network rather than shipping them.
+
 ## [3.1.0] - 2026-07-31
 
 Scanner accuracy and CI robustness release. All CI JSON changes are additive — existing consumers keep working, and `pass` gating semantics are unchanged.
@@ -120,6 +153,7 @@ Breaking release: the CI JSON output contract changed (severity field removed, p
 - Agent instructed to fetch chapter source from GitHub when unsure of exact requirement wording
 - False positive caveat added to "every app has vulnerabilities" personality trait
 
+[3.2.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v1.1.0...v2.0.0
