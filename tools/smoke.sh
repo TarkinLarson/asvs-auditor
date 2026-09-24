@@ -23,6 +23,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ARTIFACT_DIR="$REPO_ROOT/.smoke"
 MANIFEST="$REPO_ROOT/.claude-plugin/plugin.json"
+SCHEMA="$REPO_ROOT/schema/asvs-report.schema.json"
 
 STAGES="0"
 TARGET=""
@@ -32,6 +33,7 @@ INVOKE=""
 OFFLINE=0
 STRICT=0
 KEEP=0
+NO_SCHEMA=0
 SCRATCH=""
 
 PASSED=0
@@ -57,6 +59,7 @@ Options:
   --offline         skip checks that need network access
   --strict          treat skipped checks as failures
   --keep            keep the temporary copy of the scan target
+  --no-schema       stage 2: do not constrain output with schema/, for A/B runs
   -h, --help        show this help
 
 Examples:
@@ -317,6 +320,13 @@ stage_scan() {
   else
     skip "--permission-prompts none (needs claude 2.1.259 or later)"
   fi
+  if [ "$NO_SCHEMA" -eq 1 ]; then
+    skip "output schema not enforced (--no-schema)"
+  elif [ -f "$SCHEMA" ]; then
+    args+=(--json-schema "$(cat "$SCHEMA")")
+  else
+    skip "output schema not enforced (schema/asvs-report.schema.json is missing)"
+  fi
   if [ -n "$MODEL" ]; then
     args+=(--model "$MODEL")
   fi
@@ -387,6 +397,38 @@ PY
     PASS*) pass "report is usable — ${verdict#PASS }" ;;
     *) fail "report is unusable — ${verdict#FAIL }" ;;
   esac
+
+  # Conformance is checked separately from usability: --json-schema constrains
+  # the shape at generation time, and this proves the committed contract and
+  # what the scanner emits have not drifted apart.
+  if [ -f "$SCHEMA" ] && [ -f "$ARTIFACT_DIR/stage2-report.json" ]; then
+    local schema_verdict
+    schema_verdict="$(python3 - "$SCHEMA" "$ARTIFACT_DIR/stage2-report.json" <<'PY'
+import json, sys
+try:
+    import jsonschema
+except ImportError:
+    print("SKIP report not validated against the schema (pip install jsonschema)")
+    raise SystemExit(0)
+
+schema = json.load(open(sys.argv[1], encoding="utf-8"))
+report = json.load(open(sys.argv[2], encoding="utf-8"))
+errors = sorted(jsonschema.Draft7Validator(schema).iter_errors(report), key=lambda e: list(e.path))
+if not errors:
+    print("PASS report conforms to schema/asvs-report.schema.json")
+else:
+    first = errors[0]
+    where = "/".join(str(p) for p in first.path) or "(root)"
+    print(f"FAIL {len(errors)} schema violation(s); first at {where}: {first.message[:160]}")
+PY
+)"
+    case "$schema_verdict" in
+      PASS*) pass "${schema_verdict#PASS }" ;;
+      SKIP*) skip "${schema_verdict#SKIP }" ;;
+      *) fail "${schema_verdict#FAIL }" ;;
+    esac
+  fi
+
   printf '          artifacts: .smoke/stage2-envelope.json, .smoke/stage2-report.json\n'
 }
 
@@ -417,6 +459,7 @@ while [ $# -gt 0 ]; do
     --offline) OFFLINE=1; shift ;;
     --strict) STRICT=1; shift ;;
     --keep) KEEP=1; shift ;;
+    --no-schema) NO_SCHEMA=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'error: unknown option %s\n\n' "$1" >&2; usage >&2; exit 2 ;;
   esac

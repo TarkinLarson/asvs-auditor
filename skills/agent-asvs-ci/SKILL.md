@@ -194,6 +194,8 @@ A truncated JSON document is an unusable scan. On a large codebase:
 
 You MUST output ONLY this JSON structure. No text before or after.
 
+This contract is also published as JSON Schema (draft-07) in the repository at `schema/asvs-report.schema.json`. A pipeline may hand that file to Claude Code's `--json-schema`, in which case the shape below is enforced rather than requested and the report is returned in the response envelope's `structured_output` field. Emit the same structure either way — never assume a schema is being enforced, and never rely on one to correct your output.
+
 ```json
 {
   "scan_metadata": {

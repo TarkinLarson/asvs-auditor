@@ -155,11 +155,15 @@ jobs:
           # the model retrying a denial instead of finishing the scan. The
           # skill's own allowed-tools frontmatter grants the reads it needs,
           # including the bundled requirement text in its reference/ directory.
+          # --json-schema constrains the reply to the committed contract, so the
+          # report arrives already parsed in .structured_output — nothing to
+          # scrape, no markdown fences to strip. `jq -e` fails the step if that
+          # field is absent, which is what a refusal or an aborted run looks like.
           claude -p "/agent-asvs-ci" \
-            --permission-mode dontAsk --permission-prompts none > scan-raw.txt
-          # Strip any markdown fencing the model may emit around the JSON
-          sed -n '/^{/,/^}/p' scan-raw.txt > scan.json
-          jq . scan.json > /dev/null   # validate JSON
+            --permission-mode dontAsk --permission-prompts none \
+            --output-format json \
+            --json-schema "$(cat schema/asvs-report.schema.json)" > envelope.json
+          jq -e '.structured_output' envelope.json > scan.json
       - name: Gate on findings
         run: |
           # Gate on `pass` — verifiable violations only. Swap for
@@ -188,8 +192,10 @@ jobs:
 
 Notes:
 
-- The skill must be present in the repo at `.claude/skills/agent-asvs-ci/SKILL.md` for `/agent-asvs-ci` to resolve.
-- Model output may occasionally include markdown fences or preamble despite instructions — keep the extraction step defensive (the `sed` filter above) and treat unparseable output as a failed scan.
+- The skill must be present in the repo at `.claude/skills/agent-asvs-ci/SKILL.md` for `/agent-asvs-ci` to resolve, and [`schema/asvs-report.schema.json`](schema/asvs-report.schema.json) must be in the repo for the `--json-schema` argument above. Copy both when you install.
+- **The schema is the output contract.** [`schema/asvs-report.schema.json`](schema/asvs-report.schema.json) (JSON Schema draft-07) defines every field, which are required, and the permitted values. Passing it to `--json-schema` constrains the scanner's reply; you can also validate a report you already have with any standard validator, e.g. `check-jsonschema --schemafile schema/asvs-report.schema.json scan.json` or `ajv validate -s schema/asvs-report.schema.json -d scan.json`. It is versioned with the skill: added fields are a minor release, removed fields or changed meanings are a major one.
+- **Without `--json-schema`, keep the extraction defensive.** Model output can include markdown fences or preamble despite the prompt's instructions — in testing, an unconstrained run did exactly that — so scrape with something like `sed -n '/^{/,/^}/p'` and treat unparseable output as a failed scan.
+- **A valid report is not a truthful one.** The schema checks shape, not substance: a scan that read nothing and reported `"pass": true` is perfectly valid JSON. Fail the build unless `scan_summary.files_scanned` is a positive number and `compliance_summary.checked_requirements` is non-empty — that is what a refusal or a mis-invoked skill looks like.
 - **Two gate booleans.** `pass` covers only what the scanner could verify from source. `pass_including_unverifiable` is the strict reading and also fails on controls it could not confirm — security headers, TLS, and rate limiting enforced at a proxy or CDN, and documentation requirements that ask whether a policy is written down. Those findings carry `not_verifiable_in_code: true` at low confidence, are counted in `unverifiable_findings`, and still appear in the per-level violation totals; the two booleans differ by exactly that set. Gate on `pass` unless you want unverified to mean unsafe.
 
 - Findings violated by absence (missing rate limiting, missing lockfile) carry `finding_type: "absence"` and are anchored to the file and line where the control belongs, so every finding has a location.
