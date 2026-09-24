@@ -150,7 +150,13 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           npm install -g @anthropic-ai/claude-code
-          claude -p "/agent-asvs-ci" --permission-mode acceptEdits > scan-raw.txt
+          # The auditor only ever reads. dontAsk denies anything that would
+          # prompt, and --permission-prompts none (Claude Code 2.1.259+) stops
+          # the model retrying a denial instead of finishing the scan. The
+          # skill's own allowed-tools frontmatter grants the reads it needs,
+          # including the bundled requirement text in its reference/ directory.
+          claude -p "/agent-asvs-ci" \
+            --permission-mode dontAsk --permission-prompts none > scan-raw.txt
           # Strip any markdown fencing the model may emit around the JSON
           sed -n '/^{/,/^}/p' scan-raw.txt > scan.json
           jq . scan.json > /dev/null   # validate JSON
