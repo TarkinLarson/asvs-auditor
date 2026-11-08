@@ -196,9 +196,11 @@ Notes:
 
 1. **Reconnaissance** — maps the codebase, identifies languages and frameworks
 2. **Category-by-category review** — checks each relevant ASVS chapter against your code
-3. **Common vulnerability patterns** — targeted searches for injection, XSS, secrets, auth gaps, etc.
-4. **Configuration review** — security headers, TLS, dependencies, debug settings
-5. **Report generation** — findings with evidence, compliance matrix, prioritized remediation
+3. **Endpoint enumeration** — builds a route map and verifies each endpoint has auth, authz, CSRF, and rate limiting
+4. **Vulnerability pattern scanning** — targeted searches for injection, XSS, secrets, plus absence-oriented control verification derived from ASVS requirements
+5. **Configuration review** — security headers, TLS, dependencies, debug settings
+6. **Composite attack path analysis** — reviews findings as a set for chained paths where combined impact exceeds any single finding
+7. **Report generation** — findings with evidence, compliance matrix, prioritized remediation
 
 ### False Positive Controls
 
