@@ -153,154 +153,23 @@ ASVS v5.0.0: 17 chapters, 80 sections, 345 requirements.
 
 If the reference files are not present (only `SKILL.md` was installed), fetch the chapter from https://github.com/OWASP/ASVS/blob/v5.0.0/5.0/en/ instead. If neither is reachable, cite at section level (e.g. V1.2) rather than guessing a requirement number.
 
-### V1: Encoding and Sanitization
-`${CLAUDE_SKILL_DIR}/reference/V1.md` — 5 sections, 30 requirements
-
-- **V1.1** Encoding and Sanitization Architecture — 2 requirements (1.1.1–1.1.2), L2
-- **V1.2** Injection Prevention — 10 requirements (1.2.1–1.2.10), L1–L3
-- **V1.3** Sanitization — 12 requirements (1.3.1–1.3.12), L1–L3
-- **V1.4** Memory, String, and Unmanaged Code — 3 requirements (1.4.1–1.4.3), L2
-- **V1.5** Safe Deserialization — 3 requirements (1.5.1–1.5.3), L1–L3
-
-### V2: Validation and Business Logic
-`${CLAUDE_SKILL_DIR}/reference/V2.md` — 4 sections, 13 requirements
-
-- **V2.1** Validation and Business Logic Documentation — 3 requirements (2.1.1–2.1.3), L1–L2
-- **V2.2** Input Validation — 3 requirements (2.2.1–2.2.3), L1–L2
-- **V2.3** Business Logic Security — 5 requirements (2.3.1–2.3.5), L1–L3
-- **V2.4** Anti-automation — 2 requirements (2.4.1–2.4.2), L2–L3
-
-### V3: Web Frontend Security
-`${CLAUDE_SKILL_DIR}/reference/V3.md` — 7 sections, 31 requirements
-
-- **V3.1** Web Frontend Security Documentation — 1 requirement (3.1.1), L3
-- **V3.2** Unintended Content Interpretation — 3 requirements (3.2.1–3.2.3), L1–L3
-- **V3.3** Cookie Setup — 5 requirements (3.3.1–3.3.5), L1–L3
-- **V3.4** Browser Security Mechanism Headers — 8 requirements (3.4.1–3.4.8), L1–L3
-- **V3.5** Browser Origin Separation — 8 requirements (3.5.1–3.5.8), L1–L3
-- **V3.6** External Resource Integrity — 1 requirement (3.6.1), L3
-- **V3.7** Other Browser Security Considerations — 5 requirements (3.7.1–3.7.5), L2–L3
-
-### V4: API and Web Service
-`${CLAUDE_SKILL_DIR}/reference/V4.md` — 4 sections, 16 requirements
-
-- **V4.1** Generic Web Service Security — 5 requirements (4.1.1–4.1.5), L1–L3
-- **V4.2** HTTP Message Structure Validation — 5 requirements (4.2.1–4.2.5), L2–L3
-- **V4.3** GraphQL — 2 requirements (4.3.1–4.3.2), L2
-- **V4.4** WebSocket — 4 requirements (4.4.1–4.4.4), L1–L2
-
-### V5: File Handling
-`${CLAUDE_SKILL_DIR}/reference/V5.md` — 4 sections, 13 requirements
-
-- **V5.1** File Handling Documentation — 1 requirement (5.1.1), L2
-- **V5.2** File Upload and Content — 6 requirements (5.2.1–5.2.6), L1–L3
-- **V5.3** File Storage — 3 requirements (5.3.1–5.3.3), L1–L3
-- **V5.4** File Download — 3 requirements (5.4.1–5.4.3), L2
-
-### V6: Authentication
-`${CLAUDE_SKILL_DIR}/reference/V6.md` — 8 sections, 47 requirements
-
-- **V6.1** Authentication Documentation — 3 requirements (6.1.1–6.1.3), L1–L2
-- **V6.2** Password Security — 12 requirements (6.2.1–6.2.12), L1–L2
-- **V6.3** General Authentication Security — 8 requirements (6.3.1–6.3.8), L1–L3
-- **V6.4** Authentication Factor Lifecycle and Recovery — 6 requirements (6.4.1–6.4.6), L1–L3
-- **V6.5** General Multi-factor authentication requirements — 8 requirements (6.5.1–6.5.8), L2–L3
-- **V6.6** Out-of-Band authentication mechanisms — 4 requirements (6.6.1–6.6.4), L2–L3
-- **V6.7** Cryptographic authentication mechanism — 2 requirements (6.7.1–6.7.2), L3
-- **V6.8** Authentication with an Identity Provider — 4 requirements (6.8.1–6.8.4), L2
-
-### V7: Session Management
-`${CLAUDE_SKILL_DIR}/reference/V7.md` — 6 sections, 19 requirements
-
-- **V7.1** Session Management Documentation — 3 requirements (7.1.1–7.1.3), L2
-- **V7.2** Fundamental Session Management Security — 4 requirements (7.2.1–7.2.4), L1
-- **V7.3** Session Timeout — 2 requirements (7.3.1–7.3.2), L2
-- **V7.4** Session Termination — 5 requirements (7.4.1–7.4.5), L1–L2
-- **V7.5** Defenses Against Session Abuse — 3 requirements (7.5.1–7.5.3), L2–L3
-- **V7.6** Federated Re-authentication — 2 requirements (7.6.1–7.6.2), L2
-
-### V8: Authorization
-`${CLAUDE_SKILL_DIR}/reference/V8.md` — 4 sections, 13 requirements
-
-- **V8.1** Authorization Documentation — 4 requirements (8.1.1–8.1.4), L1–L3
-- **V8.2** General Authorization Design — 4 requirements (8.2.1–8.2.4), L1–L3
-- **V8.3** Operation Level Authorization — 3 requirements (8.3.1–8.3.3), L1–L3
-- **V8.4** Other Authorization Considerations — 2 requirements (8.4.1–8.4.2), L2–L3
-
-### V9: Self-contained Tokens
-`${CLAUDE_SKILL_DIR}/reference/V9.md` — 2 sections, 7 requirements
-
-- **V9.1** Token source and integrity — 3 requirements (9.1.1–9.1.3), L1
-- **V9.2** Token content — 4 requirements (9.2.1–9.2.4), L1–L2
-
-### V10: OAuth and OIDC
-`${CLAUDE_SKILL_DIR}/reference/V10.md` — 7 sections, 36 requirements
-
-- **V10.1** Generic OAuth and OIDC Security — 2 requirements (10.1.1–10.1.2), L2
-- **V10.2** OAuth Client — 3 requirements (10.2.1–10.2.3), L2–L3
-- **V10.3** OAuth Resource Server — 5 requirements (10.3.1–10.3.5), L2–L3
-- **V10.4** OAuth Authorization Server — 16 requirements (10.4.1–10.4.16), L1–L3
-- **V10.5** OIDC Client — 5 requirements (10.5.1–10.5.5), L2
-- **V10.6** OpenID Provider — 2 requirements (10.6.1–10.6.2), L2
-- **V10.7** Consent Management — 3 requirements (10.7.1–10.7.3), L2
-
-### V11: Cryptography
-`${CLAUDE_SKILL_DIR}/reference/V11.md` — 7 sections, 24 requirements
-
-- **V11.1** Cryptographic Inventory and Documentation — 4 requirements (11.1.1–11.1.4), L2–L3
-- **V11.2** Secure Cryptography Implementation — 5 requirements (11.2.1–11.2.5), L2–L3
-- **V11.3** Encryption Algorithms — 5 requirements (11.3.1–11.3.5), L1–L3
-- **V11.4** Hashing and Hash-based Functions — 4 requirements (11.4.1–11.4.4), L1–L2
-- **V11.5** Random Values — 2 requirements (11.5.1–11.5.2), L2–L3
-- **V11.6** Public Key Cryptography — 2 requirements (11.6.1–11.6.2), L2–L3
-- **V11.7** In-Use Data Cryptography — 2 requirements (11.7.1–11.7.2), L3
-
-### V12: Secure Communication
-`${CLAUDE_SKILL_DIR}/reference/V12.md` — 3 sections, 12 requirements
-
-- **V12.1** General TLS Security Guidance — 5 requirements (12.1.1–12.1.5), L1–L3
-- **V12.2** HTTPS Communication with External Facing Services — 2 requirements (12.2.1–12.2.2), L1
-- **V12.3** General Service to Service Communication Security — 5 requirements (12.3.1–12.3.5), L2–L3
-
-### V13: Configuration
-`${CLAUDE_SKILL_DIR}/reference/V13.md` — 4 sections, 21 requirements
-
-- **V13.1** Configuration Documentation — 4 requirements (13.1.1–13.1.4), L2–L3
-- **V13.2** Backend Communication Configuration — 6 requirements (13.2.1–13.2.6), L2–L3
-- **V13.3** Secret Management — 4 requirements (13.3.1–13.3.4), L2–L3
-- **V13.4** Unintended Information Leakage — 7 requirements (13.4.1–13.4.7), L1–L3
-
-### V14: Data Protection
-`${CLAUDE_SKILL_DIR}/reference/V14.md` — 3 sections, 13 requirements
-
-- **V14.1** Data Protection Documentation — 2 requirements (14.1.1–14.1.2), L2
-- **V14.2** General Data Protection — 8 requirements (14.2.1–14.2.8), L1–L3
-- **V14.3** Client-side Data Protection — 3 requirements (14.3.1–14.3.3), L1–L2
-
-### V15: Secure Coding and Architecture
-`${CLAUDE_SKILL_DIR}/reference/V15.md` — 4 sections, 21 requirements
-
-- **V15.1** Secure Coding and Architecture Documentation — 5 requirements (15.1.1–15.1.5), L1–L3
-- **V15.2** Security Architecture and Dependencies — 5 requirements (15.2.1–15.2.5), L1–L3
-- **V15.3** Defensive Coding — 7 requirements (15.3.1–15.3.7), L1–L2
-- **V15.4** Safe Concurrency — 4 requirements (15.4.1–15.4.4), L3
-
-### V16: Security Logging and Error Handling
-`${CLAUDE_SKILL_DIR}/reference/V16.md` — 5 sections, 17 requirements
-
-- **V16.1** Security Logging Documentation — 1 requirement (16.1.1), L2
-- **V16.2** General Logging — 5 requirements (16.2.1–16.2.5), L2
-- **V16.3** Security Events — 4 requirements (16.3.1–16.3.4), L2
-- **V16.4** Log Protection — 3 requirements (16.4.1–16.4.3), L2
-- **V16.5** Error Handling — 4 requirements (16.5.1–16.5.4), L2–L3
-
-### V17: WebRTC
-`${CLAUDE_SKILL_DIR}/reference/V17.md` — 3 sections, 12 requirements
-
-- **V17.1** TURN Server — 2 requirements (17.1.1–17.1.2), L2–L3
-- **V17.2** Media — 8 requirements (17.2.1–17.2.8), L2–L3
-- **V17.3** Signaling — 2 requirements (17.3.1–17.3.2), L2
-
+- **V1: Encoding and Sanitization** (30 reqs) — V1.1 Encoding and Sanitization Architecture (2, L2); V1.2 Injection Prevention (10, L1–L3); V1.3 Sanitization (12, L1–L3); V1.4 Memory, String, and Unmanaged Code (3, L2); V1.5 Safe Deserialization (3, L1–L3) — `${CLAUDE_SKILL_DIR}/reference/V1.md`
+- **V2: Validation and Business Logic** (13 reqs) — V2.1 Validation and Business Logic Documentation (3, L1–L2); V2.2 Input Validation (3, L1–L2); V2.3 Business Logic Security (5, L1–L3); V2.4 Anti-automation (2, L2–L3) — `${CLAUDE_SKILL_DIR}/reference/V2.md`
+- **V3: Web Frontend Security** (31 reqs) — V3.1 Web Frontend Security Documentation (1, L3); V3.2 Unintended Content Interpretation (3, L1–L3); V3.3 Cookie Setup (5, L1–L3); V3.4 Browser Security Mechanism Headers (8, L1–L3); V3.5 Browser Origin Separation (8, L1–L3); V3.6 External Resource Integrity (1, L3); V3.7 Other Browser Security Considerations (5, L2–L3) — `${CLAUDE_SKILL_DIR}/reference/V3.md`
+- **V4: API and Web Service** (16 reqs) — V4.1 Generic Web Service Security (5, L1–L3); V4.2 HTTP Message Structure Validation (5, L2–L3); V4.3 GraphQL (2, L2); V4.4 WebSocket (4, L1–L2) — `${CLAUDE_SKILL_DIR}/reference/V4.md`
+- **V5: File Handling** (13 reqs) — V5.1 File Handling Documentation (1, L2); V5.2 File Upload and Content (6, L1–L3); V5.3 File Storage (3, L1–L3); V5.4 File Download (3, L2) — `${CLAUDE_SKILL_DIR}/reference/V5.md`
+- **V6: Authentication** (47 reqs) — V6.1 Authentication Documentation (3, L1–L2); V6.2 Password Security (12, L1–L2); V6.3 General Authentication Security (8, L1–L3); V6.4 Authentication Factor Lifecycle and Recovery (6, L1–L3); V6.5 General Multi-factor authentication requirements (8, L2–L3); V6.6 Out-of-Band authentication mechanisms (4, L2–L3); V6.7 Cryptographic authentication mechanism (2, L3); V6.8 Authentication with an Identity Provider (4, L2) — `${CLAUDE_SKILL_DIR}/reference/V6.md`
+- **V7: Session Management** (19 reqs) — V7.1 Session Management Documentation (3, L2); V7.2 Fundamental Session Management Security (4, L1); V7.3 Session Timeout (2, L2); V7.4 Session Termination (5, L1–L2); V7.5 Defenses Against Session Abuse (3, L2–L3); V7.6 Federated Re-authentication (2, L2) — `${CLAUDE_SKILL_DIR}/reference/V7.md`
+- **V8: Authorization** (13 reqs) — V8.1 Authorization Documentation (4, L1–L3); V8.2 General Authorization Design (4, L1–L3); V8.3 Operation Level Authorization (3, L1–L3); V8.4 Other Authorization Considerations (2, L2–L3) — `${CLAUDE_SKILL_DIR}/reference/V8.md`
+- **V9: Self-contained Tokens** (7 reqs) — V9.1 Token source and integrity (3, L1); V9.2 Token content (4, L1–L2) — `${CLAUDE_SKILL_DIR}/reference/V9.md`
+- **V10: OAuth and OIDC** (36 reqs) — V10.1 Generic OAuth and OIDC Security (2, L2); V10.2 OAuth Client (3, L2–L3); V10.3 OAuth Resource Server (5, L2–L3); V10.4 OAuth Authorization Server (16, L1–L3); V10.5 OIDC Client (5, L2); V10.6 OpenID Provider (2, L2); V10.7 Consent Management (3, L2) — `${CLAUDE_SKILL_DIR}/reference/V10.md`
+- **V11: Cryptography** (24 reqs) — V11.1 Cryptographic Inventory and Documentation (4, L2–L3); V11.2 Secure Cryptography Implementation (5, L2–L3); V11.3 Encryption Algorithms (5, L1–L3); V11.4 Hashing and Hash-based Functions (4, L1–L2); V11.5 Random Values (2, L2–L3); V11.6 Public Key Cryptography (2, L2–L3); V11.7 In-Use Data Cryptography (2, L3) — `${CLAUDE_SKILL_DIR}/reference/V11.md`
+- **V12: Secure Communication** (12 reqs) — V12.1 General TLS Security Guidance (5, L1–L3); V12.2 HTTPS Communication with External Facing Services (2, L1); V12.3 General Service to Service Communication Security (5, L2–L3) — `${CLAUDE_SKILL_DIR}/reference/V12.md`
+- **V13: Configuration** (21 reqs) — V13.1 Configuration Documentation (4, L2–L3); V13.2 Backend Communication Configuration (6, L2–L3); V13.3 Secret Management (4, L2–L3); V13.4 Unintended Information Leakage (7, L1–L3) — `${CLAUDE_SKILL_DIR}/reference/V13.md`
+- **V14: Data Protection** (13 reqs) — V14.1 Data Protection Documentation (2, L2); V14.2 General Data Protection (8, L1–L3); V14.3 Client-side Data Protection (3, L1–L2) — `${CLAUDE_SKILL_DIR}/reference/V14.md`
+- **V15: Secure Coding and Architecture** (21 reqs) — V15.1 Secure Coding and Architecture Documentation (5, L1–L3); V15.2 Security Architecture and Dependencies (5, L1–L3); V15.3 Defensive Coding (7, L1–L2); V15.4 Safe Concurrency (4, L3) — `${CLAUDE_SKILL_DIR}/reference/V15.md`
+- **V16: Security Logging and Error Handling** (17 reqs) — V16.1 Security Logging Documentation (1, L2); V16.2 General Logging (5, L2); V16.3 Security Events (4, L2); V16.4 Log Protection (3, L2); V16.5 Error Handling (4, L2–L3) — `${CLAUDE_SKILL_DIR}/reference/V16.md`
+- **V17: WebRTC** (12 reqs) — V17.1 TURN Server (2, L2–L3); V17.2 Media (8, L2–L3); V17.3 Signaling (2, L2) — `${CLAUDE_SKILL_DIR}/reference/V17.md`
 <!-- END GENERATED ASVS REFERENCE -->
 
 ## Mandatory Process
@@ -339,7 +208,28 @@ Adapt your search patterns to the detected stack. For example:
 
 > **Large codebases (>200 files)**: Use the Agent tool to delegate chapter groups to sub-agents running in parallel. For example: spawn one sub-agent to scan V1–V5 (injection, file handling), another for V6–V8 (auth, session, authz), another for V9–V13 (tokens, crypto, config). Merge findings into the final report.
 
-### STEP 3: Common Vulnerability Patterns
+### STEP 3: Endpoint Enumeration and Per-Route Control Verification
+
+The previous steps search for vulnerability patterns — dangerous code that is present. This step flips the perspective: enumerate the application's attack surface and verify each entry point carries the controls ASVS requires. A grep for `[Authorize]` finds endpoints that *have* auth; this step finds endpoints that *don't*.
+
+1. **Build a route map** — find every route registration, controller action, API endpoint, and publicly reachable handler. Adapt to the stack:
+   - **.NET/C#**: `[HttpGet]`, `[HttpPost]`, `[Route]`, `MapGet`/`MapPost`, minimal API `app.Map*`
+   - **Node.js/Express**: `app.get`, `app.post`, `router.*`, decorator-based routes (`@Get`, `@Post`)
+   - **Python/Django/Flask**: `urlpatterns`, `@app.route`, `@api_view`, `path()`
+   - **Java/Spring**: `@RequestMapping`, `@GetMapping`, `@PostMapping`, `@RestController`
+   - **Go**: `http.HandleFunc`, `mux.Handle`, framework-specific registrations
+   - **Ruby/Rails**: `routes.rb` — `resources`, `get`/`post`/`match`
+   - **PHP/Laravel**: `Route::get`, `Route::post`, `routes/web.php`, `routes/api.php`
+
+2. **For each endpoint, verify these controls are present** — not just that the framework supports them, but that they are *applied to this specific endpoint*:
+   - **Authentication enforcement (V6, V8.2.1)**: An explicit auth check — annotation, middleware, or guard. An endpoint that inherits auth from a base class or global middleware is fine if that inheritance is verifiable from source, not assumed. Endpoints deliberately left unauthenticated (login, registration, health check, public API) must be obvious or documented — if they are not, report them.
+   - **Authorization granularity (V8.2.2, V8.3.1)**: The endpoint checks that the authenticated user is authorized for the *specific resource or operation*, not just that a valid session exists. Look for IDOR/BOLA: does the endpoint accept an ID parameter and verify ownership before acting on it?
+   - **CSRF protection (V3.5.1–V3.5.3)**: Every state-changing endpoint (POST/PUT/PATCH/DELETE) has anti-forgery validation, or the application relies on the CORS preflight mechanism and uses a non-safelisted Content-Type.
+   - **Rate limiting on auth endpoints (V6.3.1, L1)**: Login, registration, password reset, and MFA verification endpoints must be throttled.
+
+3. **Include the route map in the report** — list it in the reconnaissance section or as an appendix. This makes the coverage claim auditable: the reader can see whether every endpoint was evaluated and which controls each one carries or lacks.
+
+### STEP 4: Common Vulnerability Patterns
 
 **Fire all pattern searches simultaneously** — do not search for injection, then XSS, then secrets in sequence. Issue all Grep calls in a single parallel batch:
 
@@ -356,13 +246,45 @@ Adapt your search patterns to the detected stack. For example:
 - **Insecure deserialization** (V1.5): Deserializing untrusted data without validation
 - **SSRF** (V1.3.6): Server-side requests built from user input without URL validation
 
-### STEP 4: Configuration Review
+**Absence-oriented control verification:**
+
+The patterns above search for dangerous code. Many ASVS requirements are violated not by the presence of bad code but by the *absence* of a required control. For each requirement at or below the target level, determine whether it describes a control the application must *have* — then verify that control exists. The full requirement text in `reference/V<n>.md` is the authority; this list is illustrative, not exhaustive:
+
+- **Password policy enforcement (V6.2)**: minimum length check, breach-password check, no composition rules — verify the validation code enforces these, not just that a config value exists
+- **Session invalidation on logout (V7.4.1)**: logout must destroy the server-side session, not just clear the cookie
+- **Session invalidation on credential change (V7.4.2)**: password change or email change must invalidate all other active sessions
+- **Generic error responses (V16.5.1)**: error handlers must return generic messages to users; stack traces, SQL errors, and internal paths must not reach the response
+- **Security event logging (V16.3)**: authentication failures, access-control denials, and input-validation failures must be logged — search for logging calls at those decision points, not just for a logging framework being imported
+- **Lockfile committed (V15.2.1)**: every dependency manifest (`package.json`, `*.csproj`, `requirements.txt`, `go.mod`, `Gemfile`, `composer.json`) must have a corresponding lockfile in the repository
+
+For each absence finding, state what you searched for and did not find — the reader verifies the absence, not just the claim.
+
+### STEP 5: Configuration Review
 
 - **Security headers** (V3.4): CSP, X-Content-Type-Options, Strict-Transport-Security, Referrer-Policy, Cross-Origin-Opener-Policy
 - **TLS configuration** (V12): Minimum TLS 1.2, strong cipher suites, valid certificates
 - **Dependency vulnerabilities** (V15.2.1): Known-vulnerable components in package manifests
 - **Debug/development settings** (V13.4): Debug mode, verbose logging, development endpoints in production config
 - **Supply chain** (V15.1.2, V15.2.4): Component inventory/SBOM, lockfiles committed and present, no floating version ranges, automated update policy configured
+
+### STEP 6: Composite Attack Path Analysis
+
+After individual findings are collected, review them as a set. A medium-confidence finding becomes high-impact when it chains with another finding to produce a path no single finding describes. This step is a review pass over findings already collected, not a new code scan.
+
+**Look for these chain patterns:**
+
+1. **Data extraction → privilege escalation**: A SQL injection, IDOR, or path traversal that can read credentials, tokens, or session material — combined with an endpoint that accepts those credentials without additional verification (no MFA step-up, no re-authentication). The chain turns a data-read finding into full account takeover.
+2. **Injection → deserialization**: An injection finding that can write or modify serialized data (database, cache, file), combined with a deserialization endpoint that trusts that store. Either finding alone may be medium confidence; together they are a code-execution path.
+3. **Missing controls compounding**: Absent controls that are individually low-risk but collectively create a viable attack path. No rate limiting + no account lockout + no MFA on authentication = credential stuffing. No CSRF + no re-authentication on sensitive operations = single-click account takeover. No input validation + no output encoding on the same data flow = stored XSS.
+4. **Information leakage → targeted exploitation**: Debug endpoints, verbose errors, or stack traces (V13.4) that reveal internal structure — file paths, class names, database schemas, framework versions — combined with an injection or auth bypass that exploits that knowledge.
+5. **Supply chain → code execution**: A missing lockfile or floating dependency version (V15.2) combined with a build or deploy pipeline that runs arbitrary package scripts, or a CI configuration that does not pin actions/images.
+
+**When a chain is identified:**
+
+- Report it as a finding mapped to the ASVS requirement most directly violated by the chain's *impact*, not its entry point
+- Reference the constituent findings by their IDs or locations so the reader can trace the path
+- Set confidence based on the weakest link — if any step in the chain is `low`, the chain is `low`
+- Describe the full path: entry point → intermediate steps → impact
 
 ## Prioritization: ASVS Levels, Not Severity Ratings
 
