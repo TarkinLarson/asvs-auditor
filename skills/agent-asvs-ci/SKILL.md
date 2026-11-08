@@ -168,7 +168,19 @@ A truncated JSON document is an unusable scan. On a large codebase:
 - Apply **Scope and Exclusions** so the scan is never spent on vendored or generated code
 - Adapt all subsequent searches to the detected stack
 
-### Step 2: Vulnerability Pattern Scanning
+### Step 2: Endpoint Enumeration and Per-Route Control Verification
+
+Enumerate the application's attack surface and verify each entry point carries the controls ASVS requires. A grep for `[Authorize]` finds endpoints that *have* auth; this step finds endpoints that *don't*.
+
+1. **Build a route map** — find every route registration, controller action, API endpoint, and publicly reachable handler. Adapt to the detected stack.
+2. **For each endpoint, verify these controls are present** — not just that the framework supports them, but that they are *applied to this specific endpoint*:
+   - **Authentication enforcement (V6, V8.2.1)**: an explicit auth check — annotation, middleware, or guard
+   - **Authorization granularity (V8.2.2, V8.3.1)**: the endpoint checks the authenticated user is authorized for the *specific resource or operation*, not just that a valid session exists
+   - **CSRF protection (V3.5.1–V3.5.3)**: every state-changing endpoint has anti-forgery validation
+   - **Rate limiting on auth endpoints (V6.3.1, L1)**: login, registration, password reset, MFA verification must be throttled
+3. **Include the route map in the compliance_summary** — list endpoints and their control coverage so the scan result is auditable
+
+### Step 3: Vulnerability Pattern Scanning
 
 **Issue all searches in parallel** — fire all Grep/Glob calls simultaneously, not sequentially. For each detected language, search for:
 - **Injection** (V1.2): SQL concatenation, OS commands, template injection, LDAP injection
@@ -183,12 +195,33 @@ A truncated JSON document is an unusable scan. On a large codebase:
 - **Insecure deserialization** (V1.5): untrusted data deserialized without validation
 - **SSRF** (V1.3.6): server-side requests built from user input without URL validation
 
-### Step 3: Configuration Review
+**Absence-oriented control verification:** Many ASVS requirements are violated by the *absence* of a required control. For each requirement at or below the target level, determine whether it describes a control the application must *have* — then verify it exists. Illustrative (not exhaustive):
+- **Password policy enforcement (V6.2)**: minimum length check, breach-password check
+- **Session invalidation on logout (V7.4.1)**: logout must destroy the server-side session
+- **Session invalidation on credential change (V7.4.2)**: password/email change must invalidate other sessions
+- **Generic error responses (V16.5.1)**: error handlers must return generic messages
+- **Security event logging (V16.3)**: authentication failures, access-control denials, input-validation failures must be logged
+- **Lockfile committed (V15.2.1)**: every dependency manifest must have a corresponding lockfile
+
+### Step 4: Configuration Review
 - Security headers (V3.4)
 - TLS configuration (V12)
 - Dependency vulnerabilities (V15.2.1): known-vulnerable components in manifests
 - Debug/development settings (V13.4)
 - **Supply chain** (V15.1.2, V15.2.4): component inventory/SBOM, lockfiles present and committed, no floating version ranges in manifests, automated update policy (dependabot.yml / renovate.json)
+
+### Step 5: Composite Attack Path Analysis
+
+After individual findings are collected, review them as a set. A medium-confidence finding becomes high-impact when it chains with another.
+
+**Chain patterns:**
+1. **Data extraction → privilege escalation**: SQLi/IDOR/path traversal that reads credentials + an endpoint accepting them without re-authentication
+2. **Injection → deserialization**: injection that writes to a store + deserialization endpoint trusting that store
+3. **Missing controls compounding**: no rate limiting + no lockout + no MFA = credential stuffing; no CSRF + no re-auth on sensitive ops = single-click takeover
+4. **Information leakage → targeted exploitation**: debug endpoints/verbose errors revealing internals + injection or auth bypass exploiting that knowledge
+5. **Supply chain → code execution**: missing lockfile/floating deps + build pipeline running arbitrary package scripts
+
+When a chain is identified, report it as a finding mapped to the most directly violated requirement, reference constituent findings, and set confidence based on the weakest link.
 
 ## OUTPUT FORMAT — STRICT JSON SCHEMA
 
