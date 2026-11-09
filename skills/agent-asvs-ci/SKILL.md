@@ -129,7 +129,7 @@ Presence findings may omit `finding_type` or set it to `"presence"`.
 
 **Partially documented controls**: when a document addresses the requirement but omits something it requires — a key-management policy with no cryptoperiod, an inventory that leaves algorithms out — that is a verifiable finding naming what is missing, not an unverifiable one. Unverifiable is reserved for finding nothing at all.
 
-**Documentation requirements** (15.1.1, 2.1.x, 5.1.x, 6.1.x, 7.1.x, 8.1.x, 11.1.x, 13.1.x, 16.1.x, and the 15.1.2 inventory/SBOM) ask whether a policy is *written down*. Search the repository's documentation first. If the policy is there, judge it like any other control: record it as passed when it meets the requirement, or emit a verifiable finding when it falls short or the repository itself states the item is missing, citing the document and line. Only when you find nothing is the requirement unanswerable from the repository, because the policy may live outside it — then the rest of this paragraph applies. Do not silently drop them and do not fabricate a location. Anchor to a documentation file that **is actually present** — whichever of `README`, `SECURITY.md`, `docs/` you found in the tree — and when none of them is present, anchor to the repository root. Do not name one of those files because it is the conventional place for the policy; name it only if you saw it. Set `"confidence": "low"` and `"not_verifiable_in_code": true`, and say in `description` where you looked. Reporting them as unverifiable preserves the information; omitting them hides a whole requirement class.
+**Documentation requirements** (15.1.1, 2.1.x, 5.1.x, 6.1.x, 7.1.x, 8.1.x, 11.1.x, 13.1.x, 16.1.x, and the 15.1.2 inventory/SBOM) ask whether a policy is *written down*. Search the repository's documentation first. If the policy is there, judge it like any other control: record it as passed when it meets the requirement, or emit a verifiable finding when it falls short or the repository itself states the item is missing, citing the document and line. Only when you find nothing is the requirement unanswerable from the repository, because the policy may live outside it — then the rest of this paragraph applies. Do not silently drop them and do not fabricate a location. Anchor to a documentation file that **is actually present** — whichever of `README`, `SECURITY.md`, `docs/` you found in the tree — and when none of them is present, anchor to the repository root. Do not name one of those files because it is the conventional place for the policy; name it only if you saw it. Set `"confidence": "low"` and `"not_verifiable_in_code": true`, and say in `description` where you looked. Reporting them as unverifiable preserves the information; omitting them hides a whole requirement class. Every documentation-requirement finding, verifiable or not, uses `"cwe_id": "CWE-1059"` (Insufficient Technical Documentation).
 
 ## Controls Enforced Outside the Code
 
@@ -144,6 +144,16 @@ These findings count toward the per-level violation totals and toward `unverifia
 
 The same treatment applies to documentation requirements (see below): the scanner reports what it could not verify, and the consumer decides whether unverified means unsafe.
 
+## Facts, Not Judgement
+
+Report what the evidence shows and leave questions of context to the assessor. Some findings turn on something the code cannot settle — whether a deployment target is production, whether a documented exception was accepted, whether a cited guidance value applies to this system. Never resolve these on your own judgement, in either direction.
+
+- **Emit the finding with its fact chain in `description`**, each link cited by `file:line`: what the setting is, which artefact ships it, and where to.
+- **Set `assessor_question`** to the open question, phrased so that yes or no settles it: "Is the target deployed by `infra/main.bicep` in scope as production?"
+- **The finding counts like any other and fails `pass`.** The facts are verified; only their relevance is open, and the assessor rules on it.
+
+**Which configuration to evaluate** is itself decided by evidence, never by an environment's name or by documentation describing intent. Evaluate the base configuration loaded in every environment, and every environment-specific configuration that an artefact in the repository — IaC, `Dockerfile`, CI deploy step, Helm values — deploys. When that deployed environment is named or documented as non-production, report it anyway and ask. An environment-specific file that nothing in the repository deploys is outside what the repository shows, and is not reported.
+
 ## Mapping Findings to Requirements
 
 Two scans of the same tree must produce the same findings. The requirement and the anchor are therefore decided by rule, never by which search happened to surface the problem first.
@@ -151,8 +161,10 @@ Two scans of the same tree must produce the same findings. The requirement and t
 - **Requirement**: cite the requirement whose text, as read in `reference/V<n>.md`, the evidence violates. Never pick one from memory or from a title that sounds close.
 - **One root cause, several requirements**: when a single defect violates more than one requirement at or below the target level, emit one finding per violated requirement. Do not choose between them — choosing is what makes two runs disagree. Requirements above the target level may be added the same way but never affect `pass`.
 - **Anchor**: put `file` and `line` on the construct that introduces the weakness — the insecure class, method, setting, or registration — not on a caller or a site that merely uses it. When the weakness is introduced in several files, see **Deduplication**.
-- **Platform defaults**: leaving an option unset, where the vendor's guidance is to rely on the platform default, is never a *definite* violation — for example, .NET negotiating TLS versions with the operating system rather than pinning `SslProtocols`. If the default is known to satisfy the requirement on every supported platform, record it as passed. If the outcome depends on platform configuration outside the repository, as TLS versions and cipher suites do, report it at `"low"` with `not_verifiable_in_code`. Report a definite violation only for an explicit insecure setting, or for a default that is known not to satisfy the requirement on the detected runtime.
+- **Platform defaults**: leaving an option unset, where the vendor's guidance is to rely on the platform default, is never a *definite* violation — for example, .NET negotiating TLS versions with the operating system rather than pinning `SslProtocols`. If the default is known to satisfy the requirement on every supported platform, record it as passed. If the outcome depends on platform configuration outside the repository, as TLS versions and cipher suites do, report it at `"low"` with `not_verifiable_in_code`. Report a definite violation only for an explicit insecure setting, or for a default that is known not to satisfy the requirement on the detected runtime. A default is known not to satisfy a requirement that defers to current guidance, as 11.4.2 does, when its documented value is below the value that guidance gives: cite both values and the source in `description`, and set `assessor_question` to ask whether that guidance applies (see **Facts, Not Judgement**).
 - **A problem is a finding or nothing**: anything you observe that violates a requirement must be reported as a finding. Never report it only in `recommendations`, which relate findings to each other and cannot carry a violation of their own (see Rule 18). An observation that violates no requirement is left out.
+- **Specific thresholds govern their own construct**: when one requirement sets a threshold for a particular construct and a general requirement sets a different one — 6.5.4 allows 20 bits of entropy for lookup secrets and out-of-band codes, where 11.5.1 asks 128 bits of every non-guessable value — the specific requirement decides that construct and the general one does not apply to it. This settles which requirement governs; it never chooses between two requirements that are both violated.
+- **Requirements that depend on a missing prerequisite**: when a requirement can only be judged against something another requirement asks to exist — 15.2.1 checks components against the time frames 15.1.1 asks to be documented — and that prerequisite was not found, the dependent requirement is inconclusive: in `checked_requirements`, in neither `passed_requirements` nor `failed_requirements`. It is not a second finding for the same gap.
 
 ## Deduplication
 
@@ -225,7 +237,7 @@ Enumerate the application's attack surface and verify each entry point carries t
 - **Missing auth** (V8): unprotected routes and endpoints
 - **Insecure cookies** (V3.3): missing Secure/HttpOnly/SameSite flags
 - **Missing rate limiting**: login, registration, password reset without throttling (**6.3.1**, L1); expensive or bulk-data endpoints without anti-automation (**2.4.1**, L2)
-- **Information leakage** (V13.4): debug flags in production config, verbose error output, stack traces
+- **Information leakage** (V13.4): debug flags in configuration that ships (see **Facts, Not Judgement**), verbose error output, stack traces
 - **Insecure deserialization** (V1.5): untrusted data deserialized without validation
 - **SSRF** (V1.3.6): server-side requests built from user input without URL validation
 
@@ -318,6 +330,7 @@ This contract is also published as JSON Schema (draft-07) in the repository at `
       "cwe_id": "CWE-78",
       "confidence": "high|medium|low",
       "root_cause": "src/services/ReportService.cs:87",
+      "assessor_question": "Optional: a yes/no question only the assessor can settle, e.g. whether a deployed target is production",
       "references": [
         "https://cheatsheetseries.owasp.org/relevant-page"
       ]
@@ -363,6 +376,7 @@ This contract is also published as JSON Schema (draft-07) in the repository at `
 18. **Every `recommendations` entry lists at least one finding** — each ID in `findings_addressed` must be the `id` of a finding in this report. A recommendation remediates or chains findings; it never introduces a problem of its own. If you want to recommend something no finding covers, either it violates a requirement and is reported as a finding first, or it violates none and is left out.
 19. **Set `root_cause` on every finding and count `root_causes` across all of them** — see **Deduplication**. Emit `0` when there are no findings.
 20. **`sampled_requirements` is optional — omit it when no evidence was sampled.** When present, its keys are a subset of `passed_requirements` (see **Sampling Large Surfaces**)
+21. **`assessor_question` is optional — omit it unless a finding's relevance turns on something the code cannot settle** (see **Facts, Not Judgement**). It does not exempt the finding from `pass` or from any counter.
 
 ## Example Output
 
@@ -447,7 +461,7 @@ Abbreviated for length: a real L2 report lists every swept requirement in `check
       "column": 5,
       "code_snippet": "\"DetailedErrors\": true",
       "context": "\"Logging\": {\n    \"LogLevel\": { \"Default\": \"Debug\" }\n},\n\"DetailedErrors\": true",
-      "description": "Detailed errors and debug-level logging are enabled in the production configuration, exposing stack traces and internal details.",
+      "description": "Detailed errors and debug-level logging are enabled in the base configuration loaded in every environment, exposing stack traces and internal details.",
       "impact": "Attackers can gather internal application structure, file paths, and error details to aid further attacks.",
       "remediation": "Set DetailedErrors to false and LogLevel to Warning or higher in production:\n\"DetailedErrors\": false,\n\"Logging\": { \"LogLevel\": { \"Default\": \"Warning\" } }",
       "cwe_id": "CWE-215",
