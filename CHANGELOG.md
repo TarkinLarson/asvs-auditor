@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/). Since these are prompt-based agents (not compiled software), versioning reflects meaningful changes to agent behavior, accuracy, or coverage.
 
+## [3.2.1] - 2026-11-09
+
+Correctness patch for the methodology added in 3.2.0. No JSON field was added, removed, or changed in meaning.
+
+### Fixed
+
+- **Two absence checks cited the wrong requirement.** Session termination on credential change was cited as V7.4.2, which covers termination when an account is disabled or deleted. The credential-change control is **V7.4.3 (L2)**, which requires *offering* termination of other sessions. Both are now listed separately with their actual wording. The lockfile check was cited as V15.2.1 (update and remediation timeframes); it now cites V15.1.2 and V15.2.4, consistent with the supply chain guidance elsewhere in both prompts.
+- **The CI variant told the scanner to add a route map to `compliance_summary`**, which the published schema forbids (`additionalProperties: false`). Under `--json-schema` that instruction could only be broken or ignored. Endpoint coverage is now recorded through absence findings and the existing requirement arrays.
+- **Attack-path chains could create violations that did not exist.** 3.2.0 reported a chain as a new finding mapped to the requirement violated by its *impact*, which could count against a requirement no individual finding violated, flip `pass`, and double-count findings already reported. Chains are now a relationship between findings: in the CI variant a `recommendations` entry whose `findings_addressed` lists the constituents, and in the interactive report a new **Attack Paths** section. Neither changes any counter or gate.
+- Step 3 of the interactive variant said "the previous steps search for vulnerability patterns" when pattern scanning is the following step, and endpoint authentication cited the whole of V6 alongside V8.2.1; it now cites V8.2.1 alone.
+- The `actions/checkout` pins carried a `# v4.2.2` comment on a SHA that is v7.0.1.
+
+### Removed
+
+- **`reference/index.md`**, added in 3.2.0. No prompt referenced it and the index inlined in `SKILL.md` already lists every section, so it was a duplicate the agent never read.
+
+### Corrected release notes
+
+The 3.2.0 entry below claimed the index extraction kept `SKILL.md` within a ~5,000-token compaction budget. It did not: both prompts grew in 3.2.0, to roughly 9,000 tokens each. It also described the absence checks as derived from ASVS rather than hand-curated; the six listed checks are a hand-picked illustration, and only the instruction to evaluate every requirement at or below the target level comes from the standard. Both statements are corrected below.
+
 ## [3.2.0] - 2026-11-09
 
 Accuracy and methodology release. The bundled requirement reference added in 3.1.0 was never actually reachable during a scan, so every finding was cited at section level — the documented offline fallback — rather than at requirement level. Three methodology gaps identified during adversarial testing are also addressed: per-endpoint control verification, absence-oriented scanning, and composite attack path analysis. No JSON field was added, removed, or changed in meaning, but **the values of `asvs_requirement` and therefore of every finding `id` change on the first run after upgrading**; see the upgrade note below.
@@ -29,9 +49,9 @@ Accuracy and methodology release. The bundled requirement reference added in 3.1
 Three methodology gaps identified during adversarial testing of the scanner ([#34](https://github.com/TarkinLarson/asvs-auditor/pull/34)):
 
 - **Per-endpoint control verification** (new Step 3 interactive / Step 2 CI). Previous methodology searched for vulnerability patterns — dangerous code that is present. This step flips the perspective: enumerate the application's attack surface by building a route map, then verify each endpoint carries authentication, authorization, CSRF protection, and rate limiting. A grep for `[Authorize]` finds endpoints that *have* auth; this step finds endpoints that *don't*.
-- **Absence-oriented scanning** added to the vulnerability patterns step. Many ASVS requirements are violated not by the presence of bad code but by the absence of a required control — password policy enforcement (V6.2), session invalidation on logout (V7.4.1), security event logging (V16.3), lockfile presence (V15.2.1). The methodology now instructs the agent to check for these systematically, derived from the ASVS requirements themselves rather than a hand-curated checklist.
+- **Absence-oriented scanning** added to the vulnerability patterns step. Many ASVS requirements are violated not by the presence of bad code but by the absence of a required control — password policy enforcement (V6.2), session invalidation on logout (V7.4.1), security event logging (V16.3), lockfile presence (V15.2.1). The methodology now instructs the agent to evaluate every requirement at or below the target level for a required control, with a short hand-picked list as illustration.
 - **Composite attack path analysis** (new Step 6 interactive / Step 5 CI). After individual findings are collected, a review pass identifies chains where combined impact exceeds any single finding: data extraction → privilege escalation, injection → deserialization, missing controls compounding, information leakage → targeted exploitation, and supply chain → code execution.
-- **Section-level index extracted to `reference/index.md`**. The full per-section index previously inlined in `SKILL.md` is now a standalone reference file, keeping `SKILL.md` within the ~5,000-token compaction budget after context summaries. Both skill variants carry a minimal chapter table inline; the generator writes the full section index as a new reference file.
+- **Interactive section index compacted** to the one-line-per-chapter form the CI variant already used, and a duplicate copy written to `reference/index.md` (removed in 3.2.1). Net, both prompts still grew in this release, to roughly 9,000 tokens each.
 
 ### Changed
 
@@ -162,6 +182,7 @@ Breaking release: the CI JSON output contract changed (severity field removed, p
 - Agent instructed to fetch chapter source from GitHub when unsure of exact requirement wording
 - False positive caveat added to "every app has vulnerabilities" personality trait
 
+[3.2.1]: https://github.com/TarkinLarson/asvs-auditor/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v2.0.0...v3.0.0

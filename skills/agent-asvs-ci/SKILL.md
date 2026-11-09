@@ -174,11 +174,11 @@ Enumerate the application's attack surface and verify each entry point carries t
 
 1. **Build a route map** — find every route registration, controller action, API endpoint, and publicly reachable handler. Adapt to the detected stack.
 2. **For each endpoint, verify these controls are present** — not just that the framework supports them, but that they are *applied to this specific endpoint*:
-   - **Authentication enforcement (V6, V8.2.1)**: an explicit auth check — annotation, middleware, or guard
+   - **Authentication and function-level access (V8.2.1)**: an explicit auth check — annotation, middleware, or guard
    - **Authorization granularity (V8.2.2, V8.3.1)**: the endpoint checks the authenticated user is authorized for the *specific resource or operation*, not just that a valid session exists
    - **CSRF protection (V3.5.1–V3.5.3)**: every state-changing endpoint has anti-forgery validation
    - **Rate limiting on auth endpoints (V6.3.1, L1)**: login, registration, password reset, MFA verification must be throttled
-3. **Include the route map in the compliance_summary** — list endpoints and their control coverage so the scan result is auditable
+3. **Record coverage through the existing fields** — the JSON contract has no route-map field, so do not invent one. An endpoint lacking a control is an absence finding anchored to its route registration; the requirements evaluated across the route map go in `checked_requirements`, and those verified on every endpoint in `passed_requirements`
 
 ### Step 3: Vulnerability Pattern Scanning
 
@@ -198,10 +198,11 @@ Enumerate the application's attack surface and verify each entry point carries t
 **Absence-oriented control verification:** Many ASVS requirements are violated by the *absence* of a required control. For each requirement at or below the target level, determine whether it describes a control the application must *have* — then verify it exists. Illustrative (not exhaustive):
 - **Password policy enforcement (V6.2)**: minimum length check, breach-password check
 - **Session invalidation on logout (V7.4.1)**: logout must destroy the server-side session
-- **Session invalidation on credential change (V7.4.2)**: password/email change must invalidate other sessions
+- **Session termination on account disable or delete (V7.4.2)**: disabling or deleting an account must terminate its active sessions
+- **Option to end other sessions after an authentication-factor change (V7.4.3, L2)**: the user must be offered termination of other sessions
 - **Generic error responses (V16.5.1)**: error handlers must return generic messages
 - **Security event logging (V16.3)**: authentication failures, access-control denials, input-validation failures must be logged
-- **Lockfile committed (V15.2.1)**: every dependency manifest must have a corresponding lockfile
+- **Lockfile committed (V15.1.2, V15.2.4)**: every dependency manifest must have a corresponding lockfile
 
 ### Step 4: Configuration Review
 - Security headers (V3.4)
@@ -221,7 +222,7 @@ After individual findings are collected, review them as a set. A medium-confiden
 4. **Information leakage → targeted exploitation**: debug endpoints/verbose errors revealing internals + injection or auth bypass exploiting that knowledge
 5. **Supply chain → code execution**: missing lockfile/floating deps + build pipeline running arbitrary package scripts
 
-When a chain is identified, report it as a finding mapped to the most directly violated requirement, reference constituent findings, and set confidence based on the weakest link.
+When a chain is identified, report it as a **`recommendations` entry, never as a new finding** — a chain is a relationship between findings, not an extra violation, so it must not change any counter or either `pass` boolean. List the constituent finding IDs in `findings_addressed`; in `action`, describe the path (entry point → intermediate steps → impact), state the weakest link's confidence, and name the fix that breaks the chain. A chain may raise its recommendation's `priority`.
 
 ## OUTPUT FORMAT — STRICT JSON SCHEMA
 
