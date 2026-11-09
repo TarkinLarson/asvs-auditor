@@ -210,7 +210,7 @@ Adapt your search patterns to the detected stack. For example:
 
 ### STEP 3: Endpoint Enumeration and Per-Route Control Verification
 
-The previous steps search for vulnerability patterns — dangerous code that is present. This step flips the perspective: enumerate the application's attack surface and verify each entry point carries the controls ASVS requires. A grep for `[Authorize]` finds endpoints that *have* auth; this step finds endpoints that *don't*.
+Pattern searches (Step 4) find dangerous code that is present. This step flips the perspective: enumerate the application's attack surface and verify each entry point carries the controls ASVS requires. A grep for `[Authorize]` finds endpoints that *have* auth; this step finds endpoints that *don't*.
 
 1. **Build a route map** — find every route registration, controller action, API endpoint, and publicly reachable handler. Adapt to the stack:
    - **.NET/C#**: `[HttpGet]`, `[HttpPost]`, `[Route]`, `MapGet`/`MapPost`, minimal API `app.Map*`
@@ -222,7 +222,7 @@ The previous steps search for vulnerability patterns — dangerous code that is 
    - **PHP/Laravel**: `Route::get`, `Route::post`, `routes/web.php`, `routes/api.php`
 
 2. **For each endpoint, verify these controls are present** — not just that the framework supports them, but that they are *applied to this specific endpoint*:
-   - **Authentication enforcement (V6, V8.2.1)**: An explicit auth check — annotation, middleware, or guard. An endpoint that inherits auth from a base class or global middleware is fine if that inheritance is verifiable from source, not assumed. Endpoints deliberately left unauthenticated (login, registration, health check, public API) must be obvious or documented — if they are not, report them.
+   - **Authentication and function-level access (V8.2.1)**: An explicit auth check — annotation, middleware, or guard. An endpoint that inherits auth from a base class or global middleware is fine if that inheritance is verifiable from source, not assumed. Endpoints deliberately left unauthenticated (login, registration, health check, public API) must be obvious or documented — if they are not, report them.
    - **Authorization granularity (V8.2.2, V8.3.1)**: The endpoint checks that the authenticated user is authorized for the *specific resource or operation*, not just that a valid session exists. Look for IDOR/BOLA: does the endpoint accept an ID parameter and verify ownership before acting on it?
    - **CSRF protection (V3.5.1–V3.5.3)**: Every state-changing endpoint (POST/PUT/PATCH/DELETE) has anti-forgery validation, or the application relies on the CORS preflight mechanism and uses a non-safelisted Content-Type.
    - **Rate limiting on auth endpoints (V6.3.1, L1)**: Login, registration, password reset, and MFA verification endpoints must be throttled.
@@ -252,10 +252,11 @@ The patterns above search for dangerous code. Many ASVS requirements are violate
 
 - **Password policy enforcement (V6.2)**: minimum length check, breach-password check, no composition rules — verify the validation code enforces these, not just that a config value exists
 - **Session invalidation on logout (V7.4.1)**: logout must destroy the server-side session, not just clear the cookie
-- **Session invalidation on credential change (V7.4.2)**: password change or email change must invalidate all other active sessions
+- **Session termination on account disable or delete (V7.4.2)**: disabling or deleting an account must terminate all of its active sessions
+- **Option to end other sessions after an authentication-factor change (V7.4.3, L2)**: after a password or other factor change, the user must be offered termination of all other active sessions
 - **Generic error responses (V16.5.1)**: error handlers must return generic messages to users; stack traces, SQL errors, and internal paths must not reach the response
 - **Security event logging (V16.3)**: authentication failures, access-control denials, and input-validation failures must be logged — search for logging calls at those decision points, not just for a logging framework being imported
-- **Lockfile committed (V15.2.1)**: every dependency manifest (`package.json`, `*.csproj`, `requirements.txt`, `go.mod`, `Gemfile`, `composer.json`) must have a corresponding lockfile in the repository
+- **Lockfile committed (V15.1.2, V15.2.4)**: every dependency manifest (`package.json`, `*.csproj`, `requirements.txt`, `go.mod`, `Gemfile`, `composer.json`) must have a corresponding lockfile in the repository
 
 For each absence finding, state what you searched for and did not find — the reader verifies the absence, not just the claim.
 
@@ -281,10 +282,11 @@ After individual findings are collected, review them as a set. A medium-confiden
 
 **When a chain is identified:**
 
-- Report it as a finding mapped to the ASVS requirement most directly violated by the chain's *impact*, not its entry point
-- Reference the constituent findings by their IDs or locations so the reader can trace the path
+- Report it in the **Attack Paths** section of the report, **not as a new finding**. A chain is a relationship between findings, not an additional requirement violation: it never changes the per-level violation counts or the compliance matrix
+- Reference the constituent findings by number; a link that is not itself a violation (such as a password-change endpoint without re-authentication, where nothing requires it) is cited by `file:line` evidence instead
 - Set confidence based on the weakest link — if any step in the chain is `low`, the chain is `low`
-- Describe the full path: entry point → intermediate steps → impact
+- Describe the full path: entry point → intermediate steps → impact, and name the link whose fix breaks the chain
+- A chain may raise its constituent findings' remediation priority within their level, never across levels
 
 ## Prioritization: ASVS Levels, Not Severity Ratings
 
@@ -380,6 +382,16 @@ public async Task<IActionResult> Login(LoginRequest request)
 **Remediation**: [specific to the detected stack]
 
 ---
+
+## Attack Paths
+
+### Path 1: SQL injection → credential extraction → account takeover
+**Links**: Finding 3 (V1.2.4, confidence high) → Finding 5 (V11.4.2, confidence medium) → no re-authentication on password change (`src/Controllers/AccountController.cs:58`)
+**Confidence**: medium (weakest link)
+**Impact**: An unauthenticated attacker reads weakly hashed credentials and takes over any account
+**Breaks the chain**: parameterize the query in Finding 3
+
+Omit this section when no chains were found.
 
 ## Compliance Matrix
 
