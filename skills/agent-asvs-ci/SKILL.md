@@ -107,6 +107,10 @@ For requirements with no taint path — cookie attributes (V3.3), headers (V3.4)
 - The setting is ambiguous, environment-dependent, or the search could not be exhaustive → `"medium"`
 - The control may be enforced outside the codebase → `"low"` with `not_verifiable_in_code` (see below)
 
+### Reachability outside the repository
+
+Reachability that depends on deployment the repository does not show — DNS, ingress routing, network exposure — does **not** lower confidence when the code path is traced. Set confidence from the code and state the dependency in `description`. This is not the same as a control that may be enforced outside the codebase: there the violation itself is unconfirmed; here it is confirmed and only its exposure is not.
+
 ### Secrets
 
 - **Not findings**: environment-variable indirection (`${VAR}`, `process.env.X`, `os.getenv(...)`, `Configuration["X"]`), obvious placeholders (`changeme`, `your-api-key-here`, `xxxxx`), and `.example` / `.template` / `.sample` files
@@ -154,25 +158,38 @@ Two scans of the same tree must produce the same findings. The requirement and t
 
 One finding per root cause per requirement. A root cause is the place the weakness is introduced (see **Anchor** in **Mapping Findings to Requirements**); sites in other files that merely use it are listed in `description`, not emitted again. If the same flaw recurs at several call sites in one file, emit one finding at the first occurrence — the lowest line number — and give the instance count plus the other line numbers in `description`. When the flaw is written independently in several files (the same unsafe query built separately in each), each file is its own root cause and gets its own finding. Never merge findings across different requirements or CWEs.
 
+**`root_cause`** — set it on every finding to the `<repo-relative path>:<line>` where the fixing change is made. Findings that one change would fix share the value: a defect that violates several requirements, or one setting whose effects surface in several files. It can differ from the finding's own `file` and `line`, as when one deployment setting weakens controls anchored elsewhere. `scan_summary.root_causes` is the number of distinct values across **all** findings, emitted or not. The per-level counters measure requirements violated; `root_causes` measures defects to fix.
+
 ## Coverage Claims
 
 `compliance_summary` must reflect what you actually did. The **Requirement Sweep** (Step 5) is what fills it: every requirement at or below the target level gets exactly one disposition.
 
 - `checked_requirements` — every requirement you evaluated against the scanned tree in the sweep: you read its text in `reference/V<n>.md` and searched for the control it requires or the violation it forbids. A requirement appearing in the section index or the `reference/` files is **not** checked until you have done that search.
 - `passed_requirements` — you located the control and verified it. Failing to find a violation is not verification. For a requirement that forbids a construct (no `eval`, no ECB mode, no unsafe deserialization), passed means an exhaustive search for that construct found none — and you could name the search.
+- `sampled_requirements` — passed requirements whose evidence was sampled (see **Sampling Large Surfaces**), each mapped to `"sampled n of N: <method>"`. Omit the field when nothing was sampled.
 - `failed_requirements` — exactly the set of `asvs_requirement` values in `findings`, including findings marked `not_verifiable_in_code`. Every failed requirement has a finding, and every finding's requirement is failed.
 - A requirement in `checked_requirements` but in neither `passed_requirements` nor `failed_requirements` is **inconclusive**: you searched and found neither the control nor a violation. That is an honest result, not a pass.
 - `not_applicable` — the technology a whole section or chapter governs is absent. No WebRTC → V17; no OAuth/OIDC → V10; no GraphQL → V4.3; no WebSocket handlers → V4.4; no upload/download paths → V5.2/V5.4; no self-contained tokens → V9. Give a reason for each in `not_applicable_reasons`.
 
 **Applications that authenticate no one.** When the application performs no authentication of its own — callers are identified by the operating system or an upstream component — V6, V7, and 16.3.1 are N/A with that reason; the authorization the application applies to the identity it receives is assessed under V8.
 
-Together these must satisfy: `passed_requirements` and `failed_requirements` are disjoint subsets of `checked_requirements`, and every requirement at or below the target level is either in `checked_requirements` or inside a section listed in `not_applicable`. If you could not evaluate a requirement, omit it — the gap is then visible to the pipeline, which is the point. Never pad these arrays: a requirement listed as checked that you did not search for is a fabricated compliance claim.
+Together these must satisfy: `passed_requirements` and `failed_requirements` are disjoint subsets of `checked_requirements`, every key of `sampled_requirements` is in `passed_requirements`, and every requirement at or below the target level is either in `checked_requirements` or inside a section listed in `not_applicable`. If you could not evaluate a requirement, omit it — the gap is then visible to the pipeline, which is the point. Never pad these arrays: a requirement listed as checked that you did not search for is a fabricated compliance claim.
+
+### Sampling Large Surfaces
+
+Every requirement gets a disposition; that is never sampled. What may be sampled is the evidence behind one requirement, when it is decided site by site — per endpoint (8.2.1, 8.2.2, 3.5.x), per output sink (3.2.x), per query (1.2.x) — and the sites outnumber what you can read in the run:
+
+1. **Enumerate every site.** Listing route registrations or grep hits is cheap; the total is N.
+2. **Verify every high-risk site in full**: reachable without authentication, state-changing, privileged, or acting on a resource identified by the caller.
+3. **Sample the rest across the codebase**, spread over modules rather than taken from the first directory found.
+
+A violation found in a sample is a finding like any other. A sample that finds nothing puts the requirement in `passed_requirements` **and** in `sampled_requirements`, so the pipeline can tell a sampled pass from a full one. Never pass sampled evidence off as full.
 
 ## Output Limits
 
 A truncated JSON document is an unusable scan. On a large codebase:
 
-- Emit at most **50 findings**. Order by ASVS level (L1 first), then `not_verifiable_in_code: false` before `true`, then `high` before `medium` before `low`. Sorting unverifiable findings last within their level stops mandated-`low` header and TLS findings from evicting a high-confidence injection.
+- Emit at most **50 findings**. Emit every finding listed in an attack-path `recommendations` entry (Step 6) first — Rule 18 requires each ID in `findings_addressed` to be in the report. Order the rest, and those too if they alone exceed the cap, by ASVS level (L1 first), then `not_verifiable_in_code: false` before `true`, then `high` before `medium` before `low`. Sorting unverifiable findings last within their level stops mandated-`low` header and TLS findings from evicting a high-confidence injection. Emission order is not priority; `recommendations[].priority` is.
 - Count **all** findings you identified in `total_findings` and the per-level counters, not just the emitted subset — `pass` gating must reflect everything found.
 - Set `"findings_truncated": true` **only** when the 50-finding cap dropped something. Deduplication also reduces the emitted count and must not set the flag.
 - The per-level counters are **post-deduplication** finding counts, not raw occurrence counts: a flaw at 12 call sites in one file contributes 1, matching the emitted findings.
@@ -195,7 +212,7 @@ Enumerate the application's attack surface and verify each entry point carries t
    - **Authorization granularity (V8.2.2, V8.3.1)**: the endpoint checks the authenticated user is authorized for the *specific resource or operation*, not just that a valid session exists
    - **CSRF protection (V3.5.1–V3.5.3)**: every state-changing endpoint has anti-forgery validation
    - **Rate limiting on auth endpoints (V6.3.1, L1)**: login, registration, password reset, MFA verification must be throttled
-3. **Record coverage through the existing fields** — the JSON contract has no route-map field, so do not invent one. An endpoint lacking a control is an absence finding anchored to its route registration. Carry the route map into the **Requirement Sweep**, where a requirement verified on every endpoint is recorded as passed
+3. **Record coverage through the existing fields** — the JSON contract has no route-map field, so do not invent one. An endpoint lacking a control is an absence finding anchored to its route registration. Carry the route map into the **Requirement Sweep**, where a requirement verified on every endpoint is recorded as passed. When there are too many endpoints to verify each one, follow **Sampling Large Surfaces**
 
 ### Step 3: Vulnerability Pattern Scanning
 
@@ -221,7 +238,7 @@ Enumerate the application's attack surface and verify each entry point carries t
 
 ### Step 5: Requirement Sweep
 
-Steps 2–4 gather evidence quickly; this step decides every requirement and is the only step that fills `compliance_summary`. It is not optional and it is not sampled. Pattern searches find dangerous code that is present; many requirements are violated only by the *absence* of a control, and only a walk through the requirements finds those.
+Steps 2–4 gather evidence quickly; this step decides every requirement and is the only step that fills `compliance_summary`. It is not optional, and no requirement is skipped or sampled — only the evidence behind a single requirement may be, under **Sampling Large Surfaces**. Pattern searches find dangerous code that is present; many requirements are violated only by the *absence* of a control, and only a walk through the requirements finds those.
 
 1. **Mark not-applicable sections first.** From reconnaissance, list the chapters and sections whose technology is absent (see **Coverage Claims**). Those go in `not_applicable` with a reason and are not swept.
 2. **Read every remaining chapter's `reference/V<n>.md`.** Issue the reads in parallel.
@@ -277,6 +294,7 @@ This contract is also published as JSON Schema (draft-07) in the repository at `
     "l2_violations": 0,
     "l3_violations": 0,
     "unverifiable_findings": 0,
+    "root_causes": 0,
     "findings_truncated": false,
     "pass": false,
     "pass_including_unverifiable": false
@@ -299,15 +317,17 @@ This contract is also published as JSON Schema (draft-07) in the repository at `
       "remediation": "Specific fix with code example in the correct language",
       "cwe_id": "CWE-78",
       "confidence": "high|medium|low",
+      "root_cause": "src/services/ReportService.cs:87",
       "references": [
         "https://cheatsheetseries.owasp.org/relevant-page"
       ]
     }
   ],
   "compliance_summary": {
-    "checked_requirements": ["V1.2.5", "V6.1.1", "V7.4.1"],
-    "passed_requirements": ["V6.1.1"],
+    "checked_requirements": ["V1.2.5", "V6.1.1", "V7.4.1", "V8.2.2"],
+    "passed_requirements": ["V6.1.1", "V8.2.2"],
     "failed_requirements": ["V1.2.5", "V7.4.1"],
+    "sampled_requirements": { "V8.2.2": "sampled 40 of 310: every unauthenticated or state-changing endpoint, plus read endpoints across all modules" },
     "not_applicable": ["V17"],
     "not_applicable_reasons": { "V17": "No WebRTC code present" }
   },
@@ -339,8 +359,10 @@ This contract is also published as JSON Schema (draft-07) in the repository at `
 14. **`finding_type` is optional** — set `"absence"` for missing controls, and either omit it or set `"presence"` otherwise
 15. **`not_verifiable_in_code` is optional — omit it entirely unless it is `true`.** Consumers filter on its presence; emitting `false` on every finding bloats the output for no gain
 16. **`unverifiable_findings` counts findings with `not_verifiable_in_code: true`** — it is exactly the gap between `pass` and `pass_including_unverifiable`. Emit `0` when there are none.
-17. **`not_applicable_reasons` is required whenever `not_applicable` is non-empty** — one entry per listed section, keyed identically. Use section-level IDs (`"V17"`, `"V4.3"`) in `not_applicable`, and requirement-level IDs (`"V1.2.5"`) in the other three arrays
+17. **`not_applicable_reasons` is required whenever `not_applicable` is non-empty** — one entry per listed section, keyed identically. Use section-level IDs (`"V17"`, `"V4.3"`) in `not_applicable`, and requirement-level IDs (`"V1.2.5"`) in the other three arrays and as the keys of `sampled_requirements`
 18. **Every `recommendations` entry lists at least one finding** — each ID in `findings_addressed` must be the `id` of a finding in this report. A recommendation remediates or chains findings; it never introduces a problem of its own. If you want to recommend something no finding covers, either it violates a requirement and is reported as a finding first, or it violates none and is left out.
+19. **Set `root_cause` on every finding and count `root_causes` across all of them** — see **Deduplication**. Emit `0` when there are no findings.
+20. **`sampled_requirements` is optional — omit it when no evidence was sampled.** When present, its keys are a subset of `passed_requirements` (see **Sampling Large Surfaces**)
 
 ## Example Output
 
@@ -363,6 +385,7 @@ Abbreviated for length: a real L2 report lists every swept requirement in `check
     "l2_violations": 1,
     "l3_violations": 0,
     "unverifiable_findings": 1,
+    "root_causes": 4,
     "findings_truncated": false,
     "pass": false,
     "pass_including_unverifiable": false
@@ -385,6 +408,7 @@ Abbreviated for length: a real L2 report lists every swept requirement in `check
       "remediation": "Use ProcessStartInfo with ArgumentList (no shell):\nvar psi = new ProcessStartInfo(\"wkhtmltopdf\") { UseShellExecute = false };\npsi.ArgumentList.Add(validatedUrl);\npsi.ArgumentList.Add(\"output.pdf\");",
       "cwe_id": "CWE-78",
       "confidence": "high",
+      "root_cause": "src/Services/ReportService.cs:87",
       "references": [
         "https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html"
       ]
@@ -406,6 +430,7 @@ Abbreviated for length: a real L2 report lists every swept requirement in `check
       "remediation": "Set options.Cookie.SecurePolicy = CookieSecurePolicy.Always;",
       "cwe_id": "CWE-614",
       "confidence": "high",
+      "root_cause": "src/Startup.cs:42",
       "references": [
         "https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html"
       ]
@@ -427,6 +452,7 @@ Abbreviated for length: a real L2 report lists every swept requirement in `check
       "remediation": "Set DetailedErrors to false and LogLevel to Warning or higher in production:\n\"DetailedErrors\": false,\n\"Logging\": { \"LogLevel\": { \"Default\": \"Warning\" } }",
       "cwe_id": "CWE-215",
       "confidence": "medium",
+      "root_cause": "appsettings.json:8",
       "references": [
         "https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html"
       ]
@@ -447,6 +473,7 @@ Abbreviated for length: a real L2 report lists every swept requirement in `check
       "remediation": "Register ASP.NET Core rate limiting and apply it to the auth endpoints:\nbuilder.Services.AddRateLimiter(o => o.AddFixedWindowLimiter(\"auth\", w => { w.PermitLimit = 5; w.Window = TimeSpan.FromMinutes(1); }));\napp.UseRateLimiter();\n// then [EnableRateLimiting(\"auth\")] on the controller",
       "cwe_id": "CWE-307",
       "confidence": "low",
+      "root_cause": "src/Program.cs:31",
       "not_verifiable_in_code": true,
       "references": [
         "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html"
@@ -503,6 +530,7 @@ If you cannot scan properly, output:
     "l2_violations": 0,
     "l3_violations": 0,
     "unverifiable_findings": 0,
+    "root_causes": 0,
     "findings_truncated": false,
     "pass": false,
     "pass_including_unverifiable": false,
