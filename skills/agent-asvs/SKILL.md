@@ -6,7 +6,8 @@ argument-hint: [optional scope, e.g. "focus on authentication", "src/controllers
 # not covered by the working-directory reads a session allows by default. Under
 # a restrictive permission mode the read is otherwise denied, and the audit
 # silently falls back to section-level citations.
-allowed-tools: Read, Grep, Glob
+# The two git commands are read-only and record the audited revision (Step 1).
+allowed-tools: Read, Grep, Glob, Bash(git rev-parse:*), Bash(git status:*)
 ---
 
 # ASVS Security Auditor Agent
@@ -116,7 +117,7 @@ An absence finding still needs a file and line. "Missing X" plus the location of
 
 **Partially documented controls**: when a document addresses the requirement but omits something it requires — a key-management policy with no cryptoperiod, an inventory that leaves algorithms out — that is a `FAIL` naming what is missing, not `UNVERIFIABLE`. `UNVERIFIABLE` is reserved for finding nothing at all.
 
-**Documentation requirements** (15.1.1, 2.1.x, 5.1.x, 6.1.x, 7.1.x, 8.1.x, 11.1.x, 13.1.x, 16.1.x, and the 15.1.2 inventory/SBOM) ask whether a policy is *written down*. Search the repository's documentation first. If the policy is there, judge it like any other control: `PASS` when it meets the requirement, `FAIL` when it falls short or the repository itself states the item is missing, each citing the document and line. Only when you find nothing is the requirement unanswerable from the repository, because the policy may live outside it — then the rest of this paragraph applies. Do not silently drop them and do not fabricate a location. Anchor to a documentation file that **is actually present** — whichever of `README`, `SECURITY.md`, `docs/` you found in the tree — and when none of them is present, anchor to the repository root. Do not name one of those files because it is the conventional place for the policy; name it only if you saw it. Mark these findings `UNVERIFIABLE` at low confidence, and say where you looked. Reporting them as unverifiable preserves the information; omitting them hides a whole requirement class.
+**Documentation requirements** (15.1.1, 2.1.x, 5.1.x, 6.1.x, 7.1.x, 8.1.x, 11.1.x, 13.1.x, 16.1.x, and the 15.1.2 inventory/SBOM) ask whether a policy is *written down*. Search the repository's documentation first. If the policy is there, judge it like any other control: `PASS` when it meets the requirement, `FAIL` when it falls short or the repository itself states the item is missing, each citing the document and line. Only when you find nothing is the requirement unanswerable from the repository, because the policy may live outside it — then the rest of this paragraph applies. Do not silently drop them and do not fabricate a location. Anchor to a documentation file that **is actually present** — whichever of `README`, `SECURITY.md`, `docs/` you found in the tree — and when none of them is present, anchor to the repository root. Do not name one of those files because it is the conventional place for the policy; name it only if you saw it. Mark these findings `UNVERIFIABLE` at low confidence, and say where you looked. Reporting them as unverifiable preserves the information; omitting them hides a whole requirement class. Every documentation-requirement finding, `FAIL` or `UNVERIFIABLE`, uses CWE-1059 (Insufficient Technical Documentation).
 
 ## Controls Enforced Outside the Code
 
@@ -129,6 +130,16 @@ Security headers (V3.4), TLS configuration (V12), and rate limiting are routinel
 
 The same reasoning applies to any control that can live outside the codebase — WAF input filtering, platform secret injection, network segmentation.
 
+## Facts, Not Judgement
+
+Report what the evidence shows and leave questions of context to the assessor. Some findings turn on something the code cannot settle — whether a deployment target is production, whether a documented exception was accepted, whether a cited guidance value applies to this system. Never resolve these on your own judgement, in either direction.
+
+- **Report the finding with its fact chain**, each link cited by `file:line`: what the setting is, which artefact ships it, and where to. For example: `appsettings.Development.json:12` enables detailed errors, and `infra/main.bicep:288` deploys the `Development` environment to the container app defined at `main.bicep:270`.
+- **Ask the open question** on an **Assessor to confirm** line, phrased so that yes or no settles it: "Is the target deployed by `main.bicep` in scope as production?"
+- **The finding counts like any other.** The facts are verified; only their relevance is open. The executive summary lists these findings so the assessor can rule on them together.
+
+**Which configuration to evaluate** is itself decided by evidence, never by an environment's name or by documentation describing intent. Evaluate the base configuration loaded in every environment, and every environment-specific configuration that an artefact in the repository — IaC, `Dockerfile`, CI deploy step, Helm values — deploys. When that deployed environment is named or documented as non-production, report it anyway and ask. An environment-specific file that nothing in the repository deploys is outside what the repository shows, and is not reported.
+
 ## Mapping Findings to Requirements
 
 Two audits of the same code must produce the same findings. The requirement and the anchor are therefore decided by rule, never by which search happened to surface the problem first.
@@ -136,8 +147,10 @@ Two audits of the same code must produce the same findings. The requirement and 
 - **Requirement**: cite the requirement whose text, as read in `reference/V<n>.md`, the evidence violates. Never pick one from memory or from a title that sounds close.
 - **One root cause, several requirements**: when a single defect violates more than one requirement at or below the target level, report one finding per violated requirement. Do not choose between them — choosing is what makes two audits disagree. Violations above the target level go in the hardening section.
 - **Anchor**: cite the construct that introduces the weakness — the insecure class, method, setting, or registration — not a caller or a site that merely uses it. When the weakness is introduced in several files, see **Deduplication**.
-- **Platform defaults**: leaving an option unset, where the vendor's guidance is to rely on the platform default, is never a *definite* violation — for example, .NET negotiating TLS versions with the operating system rather than pinning `SslProtocols`. If the default is known to satisfy the requirement on every supported platform, record it as passed. If the outcome depends on platform configuration outside the repository, as TLS versions and cipher suites do, report it as `UNVERIFIABLE` at `low` confidence. Report a definite violation only for an explicit insecure setting, or for a default that is known not to satisfy the requirement on the detected runtime.
+- **Platform defaults**: leaving an option unset, where the vendor's guidance is to rely on the platform default, is never a *definite* violation — for example, .NET negotiating TLS versions with the operating system rather than pinning `SslProtocols`. If the default is known to satisfy the requirement on every supported platform, record it as passed. If the outcome depends on platform configuration outside the repository, as TLS versions and cipher suites do, report it as `UNVERIFIABLE` at `low` confidence. Report a definite violation only for an explicit insecure setting, or for a default that is known not to satisfy the requirement on the detected runtime. A default is known not to satisfy a requirement that defers to current guidance, as 11.4.2 does, when its documented value is below the value that guidance gives: cite both values and the source, and ask the assessor whether that guidance applies (see **Facts, Not Judgement**).
 - **A problem is a finding or nothing**: anything you observe that violates a requirement must be reported as a finding. Never raise it only as a recommendation, where it would escape the violation counts and the compliance matrix. An observation that violates no requirement is left out.
+- **Specific thresholds govern their own construct**: when one requirement sets a threshold for a particular construct and a general requirement sets a different one — 6.5.4 allows 20 bits of entropy for lookup secrets and out-of-band codes, where 11.5.1 asks 128 bits of every non-guessable value — the specific requirement decides that construct and the general one does not apply to it. This settles which requirement governs; it never chooses between two requirements that are both violated.
+- **Requirements that depend on a missing prerequisite**: when a requirement can only be judged against something another requirement asks to exist — 15.2.1 checks components against the time frames 15.1.1 asks to be documented — and that prerequisite was not found, the dependent requirement is `INCONCLUSIVE`, with the prerequisite named in Notes. It is not a second finding for the same gap.
 
 ## Deduplication
 
@@ -220,6 +233,7 @@ Understand the codebase before scanning. Adapt to the languages and frameworks p
    - API endpoints and middleware
    - Cryptographic operations
    - Configuration and secrets management
+4. **Record the revision** — if the target is a git repository, record the commit (`git rev-parse HEAD`) and the uncommitted files (`git status --porcelain`); run read-only git commands only. Run both again before writing the report. If either changed, re-read every finding that cites a changed file, and state both revisions and the changed files in the report header. If the target is not a git repository, say so.
 
 Adapt your search patterns to the detected stack. For example:
 - **.NET/C#**: Look for `[Authorize]`, `DbContext`, `SqlCommand`, `IHtmlSanitizer`, `appsettings.json`
@@ -239,6 +253,8 @@ Adapt your search patterns to the detected stack. For example:
 4. Record the requirement's ASVS level (L1/L2/L3) — findings are prioritized by level, not by a severity judgment
 
 > **Large codebases (>200 files)**: Use the Agent tool to delegate chapter groups to sub-agents running in parallel. For example: spawn one sub-agent to scan V1–V5 (injection, file handling), another for V6–V8 (auth, session, authz), another for V9–V13 (tokens, crypto, config). Merge findings into the final report.
+>
+> Give each sub-agent its chapter list together with **Coverage Claims**, **Mapping Findings to Requirements**, **Facts, Not Judgement** and the documentation rules under **Reporting Missing Controls**. Each returns one row per requirement it was given — ID, status, coverage, evidence `file:line`, and the finding text for every FAIL and UNVERIFIABLE — never a prose summary or totals of its own. When merging, compute every count from the rows; check that each requirement came back exactly once and re-send any that did not; and re-check each FAIL, UNVERIFIABLE and INCONCLUSIVE against the documentation rules, **Requirements that depend on a missing prerequisite** and **Facts, Not Judgement**, which sub-agents apply inconsistently.
 
 ### STEP 3: Endpoint Enumeration and Per-Route Control Verification
 
@@ -283,7 +299,7 @@ Pattern searches (Step 4) find dangerous code that is present. This step flips t
 - **Security headers** (V3.4): CSP, X-Content-Type-Options, Strict-Transport-Security, Referrer-Policy, Cross-Origin-Opener-Policy
 - **TLS configuration** (V12): Minimum TLS 1.2, strong cipher suites, valid certificates — see **Platform defaults** under **Mapping Findings to Requirements** before reporting an unpinned version
 - **Dependency vulnerabilities** (V15.2.1): Known-vulnerable components in package manifests
-- **Debug/development settings** (V13.4): Debug mode, verbose logging, development endpoints in production config
+- **Debug/development settings** (V13.4): Debug mode, verbose logging, development endpoints in configuration that ships — see **Facts, Not Judgement** for which configuration that is
 - **Supply chain** (V15.1.2, V15.2.4): Component inventory/SBOM, lockfiles committed and present, no floating version ranges, automated update policy configured
 
 ### STEP 6: Requirement Sweep
@@ -349,6 +365,7 @@ Within a level, group findings by vulnerability class (CWE) and lead with those 
 - **ASVS Version**: 5.0
 - **ASVS Level Targeted**: L1 / L2 / L3
 - **Languages/Frameworks**: [detected stack]
+- **Revision**: [commit at start; if it changed during the audit, the commit at the end and the files that changed]
 - **Compliance**: [passed] / [checked] checked requirements met; [N] applicable requirements not checked
 - **Of which sampled**: [N] of the passes rest on sampled evidence — listed by requirement so the reader can weigh them
 - **L1 Violations**: [N] findings across [M] requirements
@@ -356,6 +373,7 @@ Within a level, group findings by vulnerability class (CWE) and lead with those 
 - **L3 Violations**: [N] findings across [M] requirements — when L3 is above the target, only those listed under Hardening; L3 was not swept
 - **Of which UNVERIFIABLE**: [N] — counted in the level totals above, since an unconfirmed control is not a met one, and listed so the reader can confirm them outside the code
 - **Root causes**: [N] distinct fixes behind the [total] findings
+- **Awaiting assessor judgement**: [N] — counted in the level totals above; each carries an **Assessor to confirm** question, listed here
 
 ## Findings
 

@@ -6,7 +6,7 @@ This project follows [Semantic Versioning](https://semver.org/). Since these are
 
 ## [Unreleased]
 
-Coverage and counting at scale ([#45](https://github.com/TarkinLarson/asvs-auditor/issues/45)). This is a minor release: three optional fields were added to the JSON contract, and a 3.2.x report still validates against the new schema.
+Coverage and counting at scale ([#45](https://github.com/TarkinLarson/asvs-auditor/issues/45)) and the mapping-rule gaps behind it ([#46](https://github.com/TarkinLarson/asvs-auditor/issues/46)), both found in a full L2 audit of a ~5,500-file codebase. This is a minor release: four optional fields were added to the JSON contract, and a 3.2.x report still validates against the new schema.
 
 ### Added
 
@@ -18,6 +18,16 @@ Coverage and counting at scale ([#45](https://github.com/TarkinLarson/asvs-audit
 - **The 50-finding cap keeps attack paths whole.** "L1 first, then by confidence" pushed a fully traced L2 finding at the centre of an attack path below low-confidence L1 documentation findings. Findings that are links in an attack path now take the first places. In the CI variant, this also guarantees that every ID a chain recommendation links is emitted. The cap decides which findings get a full write-up, not their priority.
 - **Reachability outside the repository no longer lowers confidence.** A fully traced flaw was capped at medium because whether an attacker could reach it depended on DNS. Confidence now comes from the code, and the deployment dependency is stated alongside it. This is distinct from a control that may be enforced outside the code, which remains unverifiable.
 - `tools/smoke.sh` stage 2 also fails a report where a sampled requirement is not a passed one, a finding lacks `root_cause`, or `root_causes` disagrees with the findings.
+
+### Added — mapping rules and process ([#46](https://github.com/TarkinLarson/asvs-auditor/issues/46))
+
+- **Facts, Not Judgement.** The same audit decided about ten findings on the auditor's own view of whether a deployed "Development" environment counted as production. The auditor no longer resolves questions of context. It reports the evidence chain (setting → artefact that ships it → target) and asks the assessor a yes/no question: an **Assessor to confirm** line in the interactive report, and an optional `assessor_question` in the CI variant. The facts are verified, so these findings count and fail `pass`. Which configuration is evaluated is now also decided by evidence: the base configuration, plus any environment-specific configuration that an artefact in the repository deploys. Environment names and stated intent are not evidence.
+- **Specific thresholds govern their own construct.** 6.5.4 (20 bits for lookup secrets) and 11.5.1 (128 bits for every non-guessable value) can't both apply to a backup code. The specific requirement now governs. This decides which requirement applies; it never chooses between two requirements that are both violated.
+- **Requirements that depend on a missing prerequisite are inconclusive.** 15.2.1 can't be judged without the time frames 15.1.1 asks to be documented. When those are missing, 15.2.1 is inconclusive and names the prerequisite, rather than becoming a second finding for the same gap.
+- **Defaults below current guidance.** For a requirement that defers to current guidance (11.4.2), a default whose documented value is below the guidance value now counts as known not to satisfy it. The finding cites both values and the source, and asks the assessor whether that guidance applies.
+- **Documentation findings use CWE-1059** (Insufficient Technical Documentation), so they no longer get an ad-hoc CWE. `cwe_id` stays required.
+- **Sub-agent merge contract** (interactive variant). Sub-agents return one row per requirement, never prose totals. The coordinator computes every count from those rows, re-sends requirements that come back missing, and re-checks each FAIL, UNVERIFIABLE and INCONCLUSIVE against the documentation, prerequisite and judgement rules. In the audit, two sub-agents' own totals contradicted their tables.
+- **Revision recording** (interactive variant). Reconnaissance records the commit and uncommitted files with read-only git commands, and checks both again before the report is written. If they changed, findings in the changed files are re-read and the change is disclosed. The audited repository moved twice mid-run. Copying it to a snapshot was rejected because that would write into the audit target.
 
 ## [3.2.2] - 2026-11-09
 
