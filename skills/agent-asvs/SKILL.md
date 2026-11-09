@@ -102,6 +102,8 @@ Every finding carries a confidence level:
 - `medium` — likely vulnerable but context-dependent, or the input path could not be fully traced
 - `low` — pattern present but plausibly a false positive; flag for manual review
 
+**Reachability outside the repository does not lower confidence.** When the code path is traced but whether an attacker can reach it depends on deployment the repository does not show — DNS, ingress routing, network exposure — set confidence from the code and state the dependency on a **Reachability** line. This is not the same as **Controls Enforced Outside the Code**: there, a control that may exist elsewhere leaves the violation itself unconfirmed; here, the violation is confirmed and only its exposure is not.
+
 ## Reporting Missing Controls
 
 Some requirements are violated by absence: no rate limiting, no CSRF protection, no lockfile, no security header. These still need evidence and a location.
@@ -143,12 +145,14 @@ One finding per root cause per requirement. A root cause is the place the weakne
 
 Never merge findings across different requirements or different CWEs, even when a single change would fix both.
 
+**Root causes.** Findings that one change would fix share a root cause: a defect that violates several requirements (see **One root cause, several requirements**), or one setting whose effects surface in several files. Give each root cause an ID (`RC-1`, `RC-2`, …), a short label, and the `file:line` where that change is made — which can differ from the anchors of its findings, as when one deployment setting weakens controls anchored elsewhere. Every finding names its root cause. The level counts measure requirements violated; the root-cause count measures defects to fix. Report both, because either alone misleads.
+
 ## Coverage Claims
 
 Claim only what you actually did. The **Requirement Sweep** (Step 6) is what fills the compliance matrix: every requirement at or below the target level gets exactly one status.
 
 - **Checked** — you read the requirement's text in `reference/V<n>.md` and searched the codebase for the control it requires or the violation it forbids. A requirement appearing in the reference below is not "checked" until you have done that search. Every checked requirement has one of the four statuses below.
-- **PASS** — you located the control and verified it works. Failing to find a violation is not the same as verifying a control. For a requirement that forbids a construct (no `eval`, no ECB mode, no unsafe deserialization), PASS means an exhaustive search for that construct found none — name the search in the Notes column.
+- **PASS** — you located the control and verified it works. Failing to find a violation is not the same as verifying a control. For a requirement that forbids a construct (no `eval`, no ECB mode, no unsafe deserialization), PASS means an exhaustive search for that construct found none — name the search in the Notes column. A PASS resting on sampled evidence says so (see **Sampling Large Surfaces**).
 - **FAIL** — a violation with evidence; every FAIL has a finding, and every finding's requirement is FAIL.
 - **UNVERIFIABLE** — a documentation requirement, or a control that may be enforced outside the codebase; reported as a finding marked not verifiable from source.
 - **INCONCLUSIVE** — you searched and found neither the control nor a violation. That is an honest result, not a pass.
@@ -157,6 +161,16 @@ Claim only what you actually did. The **Requirement Sweep** (Step 6) is what fil
 **Applications that authenticate no one.** When the application performs no authentication of its own — callers are identified by the operating system or an upstream component — V6, V7, and 16.3.1 are N/A with that reason; the authorization the application applies to the identity it receives is assessed under V8.
 
 Every requirement at or below the target level should be either checked or N/A. If you could not evaluate one, leave it out and count it in the "not checked" figure — an absent row is honest; a padded compliance matrix is a fabricated claim.
+
+### Sampling Large Surfaces
+
+Every requirement gets a status; that is never sampled. What may be sampled is the evidence behind one requirement, when it is decided site by site — per endpoint (8.2.1, 8.2.2, 3.5.x), per output sink (3.2.x), per query (1.2.x) — and the sites outnumber what you can read in the run. Do not imply you read them all:
+
+1. **Enumerate every site.** Listing route registrations or grep hits is cheap; state the total, N.
+2. **Verify every high-risk site in full**: reachable without authentication, state-changing, privileged, or acting on a resource identified by the caller.
+3. **Sample the rest across the codebase**, spread over modules rather than taken from the first directory found, and state the method.
+
+A violation found in a sample is a FAIL like any other. A sample that finds nothing is a PASS qualified as sampled: record `sampled n of N` and the method in the matrix's Coverage column. A requirement decided on every site is `full`. Never record sampled evidence as `full` — a sampled PASS is weaker evidence than a full one, and the reader must be able to tell them apart.
 
 ## ASVS 5.0 Requirements Reference
 
@@ -245,7 +259,7 @@ Pattern searches (Step 4) find dangerous code that is present. This step flips t
    - **CSRF protection (V3.5.1–V3.5.3)**: Every state-changing endpoint (POST/PUT/PATCH/DELETE) has anti-forgery validation, or the application relies on the CORS preflight mechanism and uses a non-safelisted Content-Type.
    - **Rate limiting on auth endpoints (V6.3.1, L1)**: Login, registration, password reset, and MFA verification endpoints must be throttled.
 
-3. **Include the route map in the report** — list it in the reconnaissance section or as an appendix. This makes the coverage claim auditable: the reader can see whether every endpoint was evaluated and which controls each one carries or lacks.
+3. **Include the route map in the report** — list it in the reconnaissance section or as an appendix. This makes the coverage claim auditable: the reader can see whether every endpoint was evaluated and which controls each one carries or lacks. When there are too many endpoints to verify each one, follow **Sampling Large Surfaces** and mark in the route map which endpoints were verified.
 
 ### STEP 4: Common Vulnerability Patterns
 
@@ -274,7 +288,7 @@ Pattern searches (Step 4) find dangerous code that is present. This step flips t
 
 ### STEP 6: Requirement Sweep
 
-Steps 2–5 gather evidence quickly; this step decides every requirement and is the only step that fills the compliance matrix. It is not optional and it is not sampled. Pattern searches find dangerous code that is present; many requirements are violated only by the *absence* of a control, and only a walk through the requirements finds those.
+Steps 2–5 gather evidence quickly; this step decides every requirement and is the only step that fills the compliance matrix. It is not optional, and no requirement is skipped or sampled — only the evidence behind a single requirement may be, under **Sampling Large Surfaces**. Pattern searches find dangerous code that is present; many requirements are violated only by the *absence* of a control, and only a walk through the requirements finds those.
 
 1. **Mark N/A first.** From reconnaissance, list the chapters, sections, and individual requirements whose technology is absent (see **Coverage Claims**), with a reason. They are not swept.
 2. **Read every remaining chapter's `reference/V<n>.md`.** Issue the reads in parallel.
@@ -336,10 +350,12 @@ Within a level, group findings by vulnerability class (CWE) and lead with those 
 - **ASVS Level Targeted**: L1 / L2 / L3
 - **Languages/Frameworks**: [detected stack]
 - **Compliance**: [passed] / [checked] checked requirements met; [N] applicable requirements not checked
-- **L1 Violations**: [N]
-- **L2 Violations**: [N]
-- **L3 Violations**: [N] — when L3 is above the target, only those listed under Hardening; L3 was not swept
+- **Of which sampled**: [N] of the passes rest on sampled evidence — listed by requirement so the reader can weigh them
+- **L1 Violations**: [N] findings across [M] requirements
+- **L2 Violations**: [N] findings across [M] requirements
+- **L3 Violations**: [N] findings across [M] requirements — when L3 is above the target, only those listed under Hardening; L3 was not swept
 - **Of which UNVERIFIABLE**: [N] — counted in the level totals above, since an unconfirmed control is not a met one, and listed so the reader can confirm them outside the code
+- **Root causes**: [N] distinct fixes behind the [total] findings
 
 ## Findings
 
@@ -348,6 +364,7 @@ Within a level, group findings by vulnerability class (CWE) and lead with those 
 **ASVS Requirement**: V1.2.5 — Verify that the application protects against OS command injection
 **Level**: L1
 **Confidence**: high
+**Root cause**: RC-1 — shell command built from user input (`src/services/ReportService.cs:87`)
 
 **Vulnerable Code**:
 ```[language]
@@ -387,6 +404,7 @@ psi.ArgumentList.Add("output.pdf");
 **Level**: L1
 **Confidence**: low
 **Finding type**: absence
+**Root cause**: RC-2 — no rate limiter registered (`src/Program.cs:31`)
 
 **Where the control belongs**:
 ```[language]
@@ -419,16 +437,17 @@ Omit this section when no chains were found.
 
 ## Compliance Matrix
 
-| Category | Requirement | Status | Notes |
-|----------|-------------|--------|-------|
-| V6.2.1 | Password length >= 8 (15 recommended) | FAIL | Only requires 6 chars |
-| V6.2.9 | Allow 64+ char passwords | PASS | Verified in `PasswordPolicy.cs:31` |
-| V6.2.12 | Breach password check | FAIL | Not implemented |
-| V3.3.1 | Secure cookie flag | FAIL | Missing on session cookie |
-| V17 | WebRTC | N/A | No WebRTC code present |
-| ... | ... | ... | ... |
+| Category | Requirement | Status | Coverage | Notes |
+|----------|-------------|--------|----------|-------|
+| V6.2.1 | Password length >= 8 (15 recommended) | FAIL | full | Only requires 6 chars |
+| V6.2.9 | Allow 64+ char passwords | PASS | full | Verified in `PasswordPolicy.cs:31` |
+| V6.2.12 | Breach password check | FAIL | full | Not implemented |
+| V3.3.1 | Secure cookie flag | FAIL | full | Missing on session cookie |
+| V8.2.2 | Data-specific access restricted to permitted consumers | PASS | sampled 40 of 310 | All 22 unauthenticated or state-changing endpoints verified; 18 read endpoints sampled across all modules |
+| V17 | WebRTC | N/A | — | No WebRTC code present |
+| ... | ... | ... | ... | ... |
 
-Statuses are defined in **Coverage Claims**: `PASS`, `FAIL`, `UNVERIFIABLE`, `INCONCLUSIVE`, `N/A`. List every requirement the sweep checked; omit only those you did not.
+Statuses are defined in **Coverage Claims**: `PASS`, `FAIL`, `UNVERIFIABLE`, `INCONCLUSIVE`, `N/A`; Coverage is `full` or `sampled n of N` per **Sampling Large Surfaces**. List every requirement the sweep checked; omit only those you did not.
 
 Report compliance as a raw fraction (`passed / checked`) alongside the count of applicable requirements you did **not** check. A bare percentage of checked requirements rises as coverage falls, which rewards a lazy scan.
 
@@ -444,9 +463,11 @@ Requirements above the target level, listed separately so they never compete wit
 1. **Immediate**: Fix L1 violations — start with injection, authentication, and access control classes
 2. **Short-term**: Fix remaining L1, then L2 violations
 3. **Ongoing**: Address L3 violations as hardening
+
+List remediation by root cause: each `RC-n` once, with the findings it closes, placed by its highest-priority finding.
 ```
 
-On a very large codebase, cap the detailed findings at the 50 highest-priority (L1 first, then by confidence), summarize the remainder by requirement in the compliance matrix, and state plainly that the detailed list was capped and by how much.
+On a very large codebase, cap the detailed findings at 50. Fill the places with every finding that is a link in an **Attack Path** first, then the rest by level (L1 first), then by confidence; if the attack-path findings alone exceed the cap, take them in that same order. This decides which findings get a full write-up, not their priority. Summarize the remainder by requirement in the compliance matrix, and state plainly that the detailed list was capped and by how much.
 
 ## Automatic Fail Triggers
 

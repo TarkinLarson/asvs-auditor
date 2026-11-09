@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/). Since these are prompt-based agents (not compiled software), versioning reflects meaningful changes to agent behavior, accuracy, or coverage.
 
+## [Unreleased]
+
+Coverage and counting at scale ([#45](https://github.com/TarkinLarson/asvs-auditor/issues/45)). This is a minor release: three optional fields were added to the JSON contract, and a 3.2.x report still validates against the new schema.
+
+### Added
+
+- **Sampling Large Surfaces.** On a ~5,500-file codebase with ~2,250 endpoints, the rule that "the sweep is not sampled" could not be met. The auditor sampled anyway, with no method, and recorded the results as plain passes. Every requirement still gets a status. What may now be sampled is the evidence behind one requirement, when it is decided site by site (per endpoint, sink or query). The scanner enumerates every site, verifies every high-risk one (unauthenticated, state-changing, privileged, or acting on a caller-identified resource) and samples the rest across modules. A violation in a sample is a full failure. A clean sample is a pass marked as sampled: the interactive report adds a Coverage column (`full` / `sampled n of N`) and an "Of which sampled" summary line, and the CI variant adds `compliance_summary.sampled_requirements`.
+- **Root causes.** Mapping one finding per violated requirement (3.2.2) keeps the compliance matrix right, but it made the level totals measure requirements touched, not defects. In the same audit, one deployment setting produced 7 findings. Every finding now names the change that fixes it: `RC-n` with a `file:line` in the interactive report, and `root_cause` (`path:line`) in the CI variant. Totals report findings, requirements violated and root causes separately, and interactive remediation is grouped by root cause. The CI variant adds `scan_summary.root_causes`.
+
+### Changed
+
+- **The 50-finding cap keeps attack paths whole.** "L1 first, then by confidence" pushed a fully traced L2 finding at the centre of an attack path below low-confidence L1 documentation findings. Findings that are links in an attack path now take the first places. In the CI variant, this also guarantees that every ID a chain recommendation links is emitted. The cap decides which findings get a full write-up, not their priority.
+- **Reachability outside the repository no longer lowers confidence.** A fully traced flaw was capped at medium because whether an attacker could reach it depended on DNS. Confidence now comes from the code, and the deployment dependency is stated alongside it. This is distinct from a control that may be enforced outside the code, which remains unverifiable.
+- `tools/smoke.sh` stage 2 also fails a report where a sampled requirement is not a passed one, a finding lacks `root_cause`, or `root_causes` disagrees with the findings.
+
 ## [3.2.2] - 2026-11-09
 
 Coverage and repeatability patch. No JSON field was added, removed, or changed in meaning; two schema field descriptions were clarified to match what the prompt already required.

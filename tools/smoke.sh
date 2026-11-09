@@ -452,18 +452,32 @@ in_scope = {
 checked = set(summary.get("checked_requirements") or [])
 passed = set(summary.get("passed_requirements") or [])
 failed = set(summary.get("failed_requirements") or [])
+sampled = set(summary.get("sampled_requirements") or {})
 findings = report.get("findings") or []
 finding_ids = {f.get("id") for f in findings}
 finding_reqs = {f.get("asvs_requirement") for f in findings}
+scan_summary = report.get("scan_summary") or {}
+truncated = scan_summary.get("findings_truncated")
 
 problems = []
 if passed & failed:
     problems.append(f"passed and failed overlap: {sorted(passed & failed)}")
 if (passed | failed) - checked:
     problems.append(f"passed/failed but not checked: {sorted((passed | failed) - checked)}")
+if sampled - passed:
+    problems.append(f"sampled but not passed: {sorted(sampled - passed)}")
 # With the 50-finding cap engaged, failed requirements may have no emitted finding.
-if not (report.get("scan_summary") or {}).get("findings_truncated") and failed != finding_reqs:
+if not truncated and failed != finding_reqs:
     problems.append(f"failed_requirements and the findings disagree on: {sorted(failed ^ finding_reqs)}")
+without_root_cause = sorted(f.get("id") for f in findings if not f.get("root_cause"))
+if without_root_cause:
+    problems.append(f"findings without root_cause: {without_root_cause}")
+root_causes = {f.get("root_cause") for f in findings if f.get("root_cause")}
+declared = scan_summary.get("root_causes")
+if not isinstance(declared, int):
+    problems.append("scan_summary.root_causes is missing")
+elif declared < len(root_causes) or (not truncated and declared != len(root_causes)):
+    problems.append(f"root_causes is {declared} but the findings carry {len(root_causes)} distinct values")
 for index, rec in enumerate(report.get("recommendations") or []):
     addressed = set(rec.get("findings_addressed") or [])
     if not addressed:
@@ -476,8 +490,8 @@ coverage = 100.0 * len(swept) / len(in_scope) if in_scope else 100.0
 if coverage < min_coverage:
     problems.append(f"coverage {coverage:.0f}% is below --min-coverage {min_coverage:g}%")
 detail = (f"{len(swept)}/{len(in_scope)} in-scope requirements checked ({coverage:.0f}%): "
-          f"{len(passed & swept)} passed, {len(failed & swept)} failed, "
-          f"{len(swept - passed - failed)} inconclusive")
+          f"{len(passed & swept)} passed ({len(sampled & swept)} sampled), {len(failed & swept)} failed, "
+          f"{len(swept - passed - failed)} inconclusive; {len(root_causes)} root causes")
 # ASCII only: on Windows a piped Python stdout is not UTF-8.
 print(("FAIL " + "; ".join(problems) + "; " if problems else "PASS ") + detail)
 PY
