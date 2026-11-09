@@ -112,7 +112,9 @@ Some requirements are violated by absence: no rate limiting, no CSRF protection,
 
 An absence finding still needs a file and line. "Missing X" plus the location of the code that should have X is verifiable; a finding with no location is not.
 
-**Documentation requirements** (15.1.1, 2.1.x, 5.1.x, 6.1.x, 7.1.x, 8.1.x, 11.1.x, 13.1.x, 16.1.x, and the 15.1.2 inventory/SBOM) ask whether a policy is *written down*, which source code cannot answer. Do not silently drop them and do not fabricate a location. Anchor to a documentation file that **is actually present** — whichever of `README`, `SECURITY.md`, `docs/` you found in the tree — and when none of them is present, anchor to the repository root. Do not name one of those files because it is the conventional place for the policy; name it only if you saw it. Mark these findings `UNVERIFIABLE` at low confidence, and say where you looked. Reporting them as unverifiable preserves the information; omitting them hides a whole requirement class.
+**Partially documented controls**: when a document addresses the requirement but omits something it requires — a key-management policy with no cryptoperiod, an inventory that leaves algorithms out — that is a `FAIL` naming what is missing, not `UNVERIFIABLE`. `UNVERIFIABLE` is reserved for finding nothing at all.
+
+**Documentation requirements** (15.1.1, 2.1.x, 5.1.x, 6.1.x, 7.1.x, 8.1.x, 11.1.x, 13.1.x, 16.1.x, and the 15.1.2 inventory/SBOM) ask whether a policy is *written down*. Search the repository's documentation first. If the policy is there, judge it like any other control: `PASS` when it meets the requirement, `FAIL` when it falls short or the repository itself states the item is missing, each citing the document and line. Only when you find nothing is the requirement unanswerable from the repository, because the policy may live outside it — then the rest of this paragraph applies. Do not silently drop them and do not fabricate a location. Anchor to a documentation file that **is actually present** — whichever of `README`, `SECURITY.md`, `docs/` you found in the tree — and when none of them is present, anchor to the repository root. Do not name one of those files because it is the conventional place for the policy; name it only if you saw it. Mark these findings `UNVERIFIABLE` at low confidence, and say where you looked. Reporting them as unverifiable preserves the information; omitting them hides a whole requirement class.
 
 ## Controls Enforced Outside the Code
 
@@ -125,20 +127,36 @@ Security headers (V3.4), TLS configuration (V12), and rate limiting are routinel
 
 The same reasoning applies to any control that can live outside the codebase — WAF input filtering, platform secret injection, network segmentation.
 
+## Mapping Findings to Requirements
+
+Two audits of the same code must produce the same findings. The requirement and the anchor are therefore decided by rule, never by which search happened to surface the problem first.
+
+- **Requirement**: cite the requirement whose text, as read in `reference/V<n>.md`, the evidence violates. Never pick one from memory or from a title that sounds close.
+- **One root cause, several requirements**: when a single defect violates more than one requirement at or below the target level, report one finding per violated requirement. Do not choose between them — choosing is what makes two audits disagree. Violations above the target level go in the hardening section.
+- **Anchor**: cite the construct that introduces the weakness — the insecure class, method, setting, or registration — not a caller or a site that merely uses it. When the weakness is introduced in several files, see **Deduplication**.
+- **Platform defaults**: leaving an option unset, where the vendor's guidance is to rely on the platform default, is never a *definite* violation — for example, .NET negotiating TLS versions with the operating system rather than pinning `SslProtocols`. If the default is known to satisfy the requirement on every supported platform, record it as passed. If the outcome depends on platform configuration outside the repository, as TLS versions and cipher suites do, report it as `UNVERIFIABLE` at `low` confidence. Report a definite violation only for an explicit insecure setting, or for a default that is known not to satisfy the requirement on the detected runtime.
+- **A problem is a finding or nothing**: anything you observe that violates a requirement must be reported as a finding. Never raise it only as a recommendation, where it would escape the violation counts and the compliance matrix. An observation that violates no requirement is left out.
+
 ## Deduplication
 
-One finding per root cause per file. If the same flaw recurs at several call sites in one file, report it once at the first occurrence, then give the instance count and the other line numbers in the description. If it spans multiple files, report one finding per file — the fix is usually per-file, and per-file findings keep the level counts meaningful.
+One finding per root cause per requirement. A root cause is the place the weakness is introduced (see **Anchor** above); sites in other files that merely use it are listed in the description, not reported again. If the same flaw recurs at several call sites in one file, report it once at the first occurrence — the lowest line number — then give the instance count and the other line numbers in the description. When the flaw is written independently in several files (the same unsafe query built separately in each), each file is its own root cause and gets its own finding — the fix is per-file, and per-file findings keep the level counts meaningful.
 
 Never merge findings across different requirements or different CWEs, even when a single change would fix both.
 
 ## Coverage Claims
 
-Claim only what you actually did.
+Claim only what you actually did. The **Requirement Sweep** (Step 6) is what fills the compliance matrix: every requirement at or below the target level gets exactly one status.
 
-- **Checked** — you searched the codebase for that requirement's pattern class and evaluated what you found. A requirement appearing in the reference below is not "checked".
-- **Passed** — you located the control and verified it works. Failing to find a violation is not the same as verifying a control.
-- **Not applicable** — the technology the requirement governs is absent. No WebRTC code → V17; no OAuth/OIDC flows → V10; no GraphQL schema or resolvers → V4.3; no WebSocket handlers → V4.4; no upload or download paths → V5.2/V5.4; no self-contained tokens → V9. Give the reason for every N/A.
-- Anything you neither checked nor marked N/A is simply omitted. An absent row is honest; a padded compliance matrix is a fabricated claim.
+- **Checked** — you read the requirement's text in `reference/V<n>.md` and searched the codebase for the control it requires or the violation it forbids. A requirement appearing in the reference below is not "checked" until you have done that search. Every checked requirement has one of the four statuses below.
+- **PASS** — you located the control and verified it works. Failing to find a violation is not the same as verifying a control. For a requirement that forbids a construct (no `eval`, no ECB mode, no unsafe deserialization), PASS means an exhaustive search for that construct found none — name the search in the Notes column.
+- **FAIL** — a violation with evidence; every FAIL has a finding, and every finding's requirement is FAIL.
+- **UNVERIFIABLE** — a documentation requirement, or a control that may be enforced outside the codebase; reported as a finding marked not verifiable from source.
+- **INCONCLUSIVE** — you searched and found neither the control nor a violation. That is an honest result, not a pass.
+- **N/A** — the technology the requirement governs is absent. Mark whole sections or chapters where you can — no WebRTC code → V17; no OAuth/OIDC flows → V10; no GraphQL schema or resolvers → V4.3; no WebSocket handlers → V4.4; no upload or download paths → V5.2/V5.4; no self-contained tokens → V9 — and individual requirements where only that one has nothing to test (no database → 1.2.4 in an otherwise applicable section). Give the reason for every N/A. N/A means the technology is absent, never that you did not look.
+
+**Applications that authenticate no one.** When the application performs no authentication of its own — callers are identified by the operating system or an upstream component — V6, V7, and 16.3.1 are N/A with that reason; the authorization the application applies to the identity it receives is assessed under V8.
+
+Every requirement at or below the target level should be either checked or N/A. If you could not evaluate one, leave it out and count it in the "not checked" figure — an absent row is honest; a padded compliance matrix is a fabricated claim.
 
 ## ASVS 5.0 Requirements Reference
 
@@ -212,7 +230,7 @@ Adapt your search patterns to the detected stack. For example:
 
 Pattern searches (Step 4) find dangerous code that is present. This step flips the perspective: enumerate the application's attack surface and verify each entry point carries the controls ASVS requires. A grep for `[Authorize]` finds endpoints that *have* auth; this step finds endpoints that *don't*.
 
-1. **Build a route map** — find every route registration, controller action, API endpoint, and publicly reachable handler. Adapt to the stack:
+1. **Build a route map** — find every route registration, controller action, API endpoint, and publicly reachable handler. In an application with no HTTP server, the entry points are whatever untrusted callers can reach instead — IPC channels, named pipes, local sockets, CLI verbs that cross a privilege boundary, queue consumers — and they get the same per-entry-point verification. Adapt to the stack:
    - **.NET/C#**: `[HttpGet]`, `[HttpPost]`, `[Route]`, `MapGet`/`MapPost`, minimal API `app.Map*`
    - **Node.js/Express**: `app.get`, `app.post`, `router.*`, decorator-based routes (`@Get`, `@Post`)
    - **Python/Django/Flask**: `urlpatterns`, `@app.route`, `@api_view`, `path()`
@@ -246,9 +264,22 @@ Pattern searches (Step 4) find dangerous code that is present. This step flips t
 - **Insecure deserialization** (V1.5): Deserializing untrusted data without validation
 - **SSRF** (V1.3.6): Server-side requests built from user input without URL validation
 
-**Absence-oriented control verification:**
+### STEP 5: Configuration Review
 
-The patterns above search for dangerous code. Many ASVS requirements are violated not by the presence of bad code but by the *absence* of a required control. For each requirement at or below the target level, determine whether it describes a control the application must *have* — then verify that control exists. The full requirement text in `reference/V<n>.md` is the authority; this list is illustrative, not exhaustive:
+- **Security headers** (V3.4): CSP, X-Content-Type-Options, Strict-Transport-Security, Referrer-Policy, Cross-Origin-Opener-Policy
+- **TLS configuration** (V12): Minimum TLS 1.2, strong cipher suites, valid certificates — see **Platform defaults** under **Mapping Findings to Requirements** before reporting an unpinned version
+- **Dependency vulnerabilities** (V15.2.1): Known-vulnerable components in package manifests
+- **Debug/development settings** (V13.4): Debug mode, verbose logging, development endpoints in production config
+- **Supply chain** (V15.1.2, V15.2.4): Component inventory/SBOM, lockfiles committed and present, no floating version ranges, automated update policy configured
+
+### STEP 6: Requirement Sweep
+
+Steps 2–5 gather evidence quickly; this step decides every requirement and is the only step that fills the compliance matrix. It is not optional and it is not sampled. Pattern searches find dangerous code that is present; many requirements are violated only by the *absence* of a control, and only a walk through the requirements finds those.
+
+1. **Mark N/A first.** From reconnaissance, list the chapters, sections, and individual requirements whose technology is absent (see **Coverage Claims**), with a reason. They are not swept.
+2. **Read every remaining chapter's `reference/V<n>.md`.** Issue the reads in parallel.
+3. **Walk each requirement at or below the target level, in document order.** Decide whether it describes a control the application must *have* or a construct it must *not contain*, then search for exactly that, reusing the evidence from Steps 2–5 where it already answers the question. Give it one status from **Coverage Claims**, and report a finding for every FAIL and UNVERIFIABLE per **Mapping Findings to Requirements**.
+4. **Requirements commonly missed by pattern searches** — illustrative, never a substitute for the walk:
 
 - **Password policy enforcement (V6.2)**: minimum length check, breach-password check, no composition rules — verify the validation code enforces these, not just that a config value exists
 - **Session invalidation on logout (V7.4.1)**: logout must destroy the server-side session, not just clear the cookie
@@ -258,17 +289,9 @@ The patterns above search for dangerous code. Many ASVS requirements are violate
 - **Security event logging (V16.3)**: authentication failures, access-control denials, and input-validation failures must be logged — search for logging calls at those decision points, not just for a logging framework being imported
 - **Lockfile committed (V15.1.2, V15.2.4)**: every dependency manifest (`package.json`, `*.csproj`, `requirements.txt`, `go.mod`, `Gemfile`, `composer.json`) must have a corresponding lockfile in the repository
 
-For each absence finding, state what you searched for and did not find — the reader verifies the absence, not just the claim.
+For each absence finding, state what you searched for and did not find — the reader verifies the absence, not just the claim. A requirement you ran out of budget to evaluate is left out of the matrix and counted as not checked, never guessed.
 
-### STEP 5: Configuration Review
-
-- **Security headers** (V3.4): CSP, X-Content-Type-Options, Strict-Transport-Security, Referrer-Policy, Cross-Origin-Opener-Policy
-- **TLS configuration** (V12): Minimum TLS 1.2, strong cipher suites, valid certificates
-- **Dependency vulnerabilities** (V15.2.1): Known-vulnerable components in package manifests
-- **Debug/development settings** (V13.4): Debug mode, verbose logging, development endpoints in production config
-- **Supply chain** (V15.1.2, V15.2.4): Component inventory/SBOM, lockfiles committed and present, no floating version ranges, automated update policy configured
-
-### STEP 6: Composite Attack Path Analysis
+### STEP 7: Composite Attack Path Analysis
 
 After individual findings are collected, review them as a set. A medium-confidence finding becomes high-impact when it chains with another finding to produce a path no single finding describes. This step is a review pass over findings already collected, not a new code scan.
 
@@ -312,10 +335,11 @@ Within a level, group findings by vulnerability class (CWE) and lead with those 
 - **ASVS Version**: 5.0
 - **ASVS Level Targeted**: L1 / L2 / L3
 - **Languages/Frameworks**: [detected stack]
-- **Overall Compliance**: [X]% of checked requirements met
+- **Compliance**: [passed] / [checked] checked requirements met; [N] applicable requirements not checked
 - **L1 Violations**: [N]
 - **L2 Violations**: [N]
-- **L3 Violations**: [N]
+- **L3 Violations**: [N] — when L3 is above the target, only those listed under Hardening; L3 was not swept
+- **Of which UNVERIFIABLE**: [N] — counted in the level totals above, since an unconfirmed control is not a met one, and listed so the reader can confirm them outside the code
 
 ## Findings
 
@@ -404,7 +428,7 @@ Omit this section when no chains were found.
 | V17 | WebRTC | N/A | No WebRTC code present |
 | ... | ... | ... | ... |
 
-Statuses: `PASS` (control located and verified), `FAIL` (violation with evidence), `N/A` (technology absent — give the reason), `UNVERIFIABLE` (control may be enforced outside the codebase, or is a documentation requirement). Omit requirements you did not check.
+Statuses are defined in **Coverage Claims**: `PASS`, `FAIL`, `UNVERIFIABLE`, `INCONCLUSIVE`, `N/A`. List every requirement the sweep checked; omit only those you did not.
 
 Report compliance as a raw fraction (`passed / checked`) alongside the count of applicable requirements you did **not** check. A bare percentage of checked requirements rises as coverage falls, which rewards a lazy scan.
 
@@ -446,7 +470,7 @@ On a very large codebase, cap the detailed findings at the 50 highest-priority (
 You're successful when:
 - Every finding maps to a specific ASVS 5.0 requirement
 - All findings include file path and line numbers — including absence findings, anchored to where the control belongs
-- Every finding carries a confidence level, and every `high` confidence finding has a traced path from untrusted input
+- Every finding carries a confidence level set by the rubric in **Evidence Standards** — a traced path from untrusted input for taint-flow `high` findings
 - L1 *presence* findings include proof of concept; absence findings give the search evidence instead — never fabricate a PoC to satisfy this
 - Remediation guidance is specific, actionable, and in the correct language
 - The compliance matrix claims only what you checked, and every N/A has a stated reason

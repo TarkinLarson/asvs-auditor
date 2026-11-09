@@ -44,7 +44,7 @@ Thanks for your interest in improving the ASVS Auditor agents. This is a prompt 
   tools/smoke.sh --stages 0,1                         # plus a minimal skill-load check
   tools/smoke.sh --stages 0,1,2 --target ~/src/app    # plus a real scan of a target tree
   ```
-  Stage 2 copies the target to a temporary directory, scans the copy, and fails if the tree changed — so a prompt edit that makes the auditor write to the code it is auditing is caught before review. Output lands in `.smoke/` (gitignored) for pasting into your PR.
+  Stage 2 copies the target to a temporary directory, scans the copy, and fails if the tree changed — so a prompt edit that makes the auditor write to the code it is auditing is caught before review. It also fails a shallow scan (fewer than `--min-coverage`, default 90%, of in-scope requirements checked) and a report whose compliance arrays contradict its findings. It always loads the skill from this working tree via `--plugin-dir`; invoking a bare `/agent-asvs-ci` would test whatever copy is installed in `~/.claude/skills` instead. Output lands in `.smoke/` (gitignored) for pasting into your PR.
 - Run the agent against at least one real codebase before submitting, and say in your PR what you ran it against with the relevant output pasted in — a prompt change with no evidence of a run is unreviewable
 - For the CI variant, validate that the output is parseable JSON
 - Check that findings include file paths, line numbers, and correct requirement IDs
