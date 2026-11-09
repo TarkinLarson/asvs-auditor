@@ -4,9 +4,9 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/). Since these are prompt-based agents (not compiled software), versioning reflects meaningful changes to agent behavior, accuracy, or coverage.
 
-## [3.2.0] - 2026-09-24
+## [3.2.0] - 2026-11-09
 
-Accuracy release. The bundled requirement reference added in 3.1.0 was never actually reachable during a scan, so every finding was cited at section level — the documented offline fallback — rather than at requirement level. No JSON field was added, removed, or changed in meaning, but **the values of `asvs_requirement` and therefore of every finding `id` change on the first run after upgrading**; see the upgrade note below.
+Accuracy and methodology release. The bundled requirement reference added in 3.1.0 was never actually reachable during a scan, so every finding was cited at section level — the documented offline fallback — rather than at requirement level. Three methodology gaps identified during adversarial testing are also addressed: per-endpoint control verification, absence-oriented scanning, and composite attack path analysis. No JSON field was added, removed, or changed in meaning, but **the values of `asvs_requirement` and therefore of every finding `id` change on the first run after upgrading**; see the upgrade note below.
 
 ### Fixed — the bundled reference was unreachable, so citations silently degraded
 
@@ -23,6 +23,15 @@ Accuracy release. The bundled requirement reference added in 3.1.0 was never act
 - **`tools/smoke.sh`** — a pre-release check that runs in cost order: static checks for free, then a minimal skill-load check, then a real scan of a target directory. The scan runs against a temporary copy and fails if the copy changed, so a prompt edit that makes the auditor write to the code it audits is caught before review. It also fails a scan that read no files, which is what a refusal looks like, and validates the emitted report against the committed schema when the `jsonschema` package is importable.
 - **`tools/check-skills.py`** — frontmatter and packaging validation. Claude Code silently ignores unrecognised frontmatter fields and loads a skill with no fields at all when the YAML fails to parse, so a mistyped `allowed-tools` restricts nothing and reports nothing. Also checks each skill ships all 17 reference chapters, since a `SKILL.md`-only install degrades to section-level citations.
 - **`--source` on `tools/generate-asvs-reference.py`** — regenerate from a local `OWASP/ASVS` checkout instead of the GitHub contents API, which is rate limited and unavailable to a runner without GitHub credentials. It refuses a checkout that is not at the pinned tag, so provenance is unchanged, and output is byte-identical either way.
+
+### Added — scanning methodology improvements
+
+Three methodology gaps identified during adversarial testing of the scanner ([#34](https://github.com/TarkinLarson/asvs-auditor/pull/34)):
+
+- **Per-endpoint control verification** (new Step 3 interactive / Step 2 CI). Previous methodology searched for vulnerability patterns — dangerous code that is present. This step flips the perspective: enumerate the application's attack surface by building a route map, then verify each endpoint carries authentication, authorization, CSRF protection, and rate limiting. A grep for `[Authorize]` finds endpoints that *have* auth; this step finds endpoints that *don't*.
+- **Absence-oriented scanning** added to the vulnerability patterns step. Many ASVS requirements are violated not by the presence of bad code but by the absence of a required control — password policy enforcement (V6.2), session invalidation on logout (V7.4.1), security event logging (V16.3), lockfile presence (V15.2.1). The methodology now instructs the agent to check for these systematically, derived from the ASVS requirements themselves rather than a hand-curated checklist.
+- **Composite attack path analysis** (new Step 6 interactive / Step 5 CI). After individual findings are collected, a review pass identifies chains where combined impact exceeds any single finding: data extraction → privilege escalation, injection → deserialization, missing controls compounding, information leakage → targeted exploitation, and supply chain → code execution.
+- **Section-level index extracted to `reference/index.md`**. The full per-section index previously inlined in `SKILL.md` is now a standalone reference file, keeping `SKILL.md` within the ~5,000-token compaction budget after context summaries. Both skill variants carry a minimal chapter table inline; the generator writes the full section index as a new reference file.
 
 ### Changed
 
