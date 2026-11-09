@@ -235,6 +235,11 @@
             "type": "boolean",
             "description": "Optional, and omitted entirely unless true. Marks a control that may be enforced at a proxy, CDN, gateway, or in documentation. Excluded from `pass`."
           },
+          "assessor_question": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Optional, and omitted unless needed. A yes/no question only the human assessor can settle, such as whether a deployed target is production. The finding's facts are verified, so it still counts and still fails `pass`."
+          },
           "root_cause": {
             "type": "string",
             "pattern": "^.+:[0-9]+$",
