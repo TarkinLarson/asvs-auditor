@@ -256,7 +256,7 @@
             "type": "string",
             "pattern": "^V[0-9]{1,2}(\\.[0-9]{1,2}){1,2}$"
           },
-          "description": "Requirements whose pattern class was actually searched for and evaluated. Appearing in the reference is not 'checked'."
+          "description": "Requirements actually evaluated against the scanned tree: the requirement text was read and the codebase searched for the control or violation it describes. Appearing in the reference is not 'checked'. A checked requirement in neither passed_requirements nor failed_requirements is inconclusive."
         },
         "passed_requirements": {
           "type": "array",
@@ -268,6 +268,7 @@
         },
         "failed_requirements": {
           "type": "array",
+          "description": "Exactly the asvs_requirement values of this report's findings, including those marked not_verifiable_in_code. Disjoint from passed_requirements.",
           "items": {
             "type": "string",
             "pattern": "^V[0-9]{1,2}(\\.[0-9]{1,2}){1,2}$"

@@ -4,6 +4,44 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/). Since these are prompt-based agents (not compiled software), versioning reflects meaningful changes to agent behavior, accuracy, or coverage.
 
+## [3.2.2] - 2026-11-09
+
+Coverage and repeatability patch. No JSON field was added, removed, or changed in meaning; two schema field descriptions were clarified to match what the prompt already required.
+
+### Fixed
+
+- **Scans checked a handful of requirements, not the standard** ([#37](https://github.com/TarkinLarson/asvs-auditor/issues/37)). 3.2.0 told the scanner to evaluate every requirement at or below the target level, in one sentence inside the pattern-scanning step, while the coverage rules defined "checked" as "searched for its pattern class". The narrower rule won. Two CI scans of the same tree recorded 2 and 8 checked requirements out of ~250 at L2, and the turn limit was ruled out as the cause. Both variants now have a mandatory **Requirement Sweep** step. It reads every applicable reference chapter and gives each requirement at or below the target level exactly one status: passed, failed, unverifiable, inconclusive (searched, found neither the control nor a violation), or not applicable. "Checked" and "failed" now have one definition each, and the CI variant states the invariants between the compliance arrays. Measured on the same tree with the interactive variant: every L1+L2 requirement was decided in all three runs, with 0 left unchecked.
+- **The same defect was mapped differently on every run** ([#41](https://github.com/TarkinLarson/asvs-auditor/issues/41)). Two 3.2.1 CI scans shared no finding: one defect was cited as V13.3.1 in one run and V13.3.3 in the other, at different lines, and `pass` flipped. A new **Mapping Findings to Requirements** section decides this by rule:
+  - cite the requirement whose text the evidence violates;
+  - emit one finding per violated requirement rather than choosing between them;
+  - anchor on the construct that introduces the weakness, not on a caller;
+  - one root cause is one finding, with other use sites listed inside it.
+
+  Across three interactive runs, 8 failed or unverifiable requirements were found by all three and 5 more by two, mostly at identical locations. The remaining difference is recall: each run surfaced two or three findings the others missed. Results are still probabilistic.
+- **A violation could be reported only as a recommendation** ([#38](https://github.com/TarkinLarson/asvs-auditor/issues/38)). A scan recommended signing release artefacts with `findings_addressed: []`, so the gap counted against no requirement. Every recommendation must now link at least one finding, and anything that violates a requirement is reported as a finding first. The schema is unchanged; tightening it is a contract change.
+- **Platform defaults were reported as violations.** A .NET client that leaves TLS versions to the operating system, as Microsoft recommends, failed V12.1.1 at L1. Relying on a vendor-recommended default is no longer a definite violation. It is recorded as passed when the default is known to satisfy the requirement, and as unverifiable when the outcome depends on platform configuration outside the repository.
+- Clarified, after test runs reported the instructions as ambiguous:
+  - documentation requirements are judged pass or fail when the policy is in the repository, and are unverifiable only when nothing is found;
+  - a partially documented control is a failure that names what is missing;
+  - a requirement that forbids a construct passes on an exhaustive, named search;
+  - applications with no HTTP server enumerate their IPC, pipe, socket and CLI entry points instead of routes;
+  - applications that authenticate no one mark V6, V7 and 16.3.1 not applicable;
+  - the interactive variant allows not-applicable on single requirements, and its summary reports passed/checked plus a not-checked count instead of a percentage;
+  - a leftover rule demanding a traced input path for every `high` finding, which contradicted the configuration rubric, now applies to taint-flow requirements only.
+
+### Changed
+
+- **Scans use considerably more tokens.** Reading and deciding every applicable requirement is the point of this release. An interactive L2 audit of a ~120-file C# codebase used ~330k tokens and about ten minutes.
+- `tools/smoke.sh`:
+  - Stage 2 now fails a shallow or self-contradictory report. It checks coverage against the bundled reference (`--min-coverage`, default 90%, not-applicable sections excluded), that `failed_requirements` matches the findings, that passed and failed are disjoint subsets of checked, and that every recommendation links an existing finding ([#40](https://github.com/TarkinLarson/asvs-auditor/issues/40)).
+  - New `--max-turns` option, default 100 (was a fixed 40). The default `--budget` is now 10.
+  - The line-ending check reads what git stores, not the working tree, so a stale CRLF checkout under `core.autocrlf=true` no longer fails it ([#39](https://github.com/TarkinLarson/asvs-auditor/issues/39)).
+  - Without a plugin manifest, the skill is now invoked by the directory-derived plugin namespace. The obvious alternative, a bare `/agent-asvs-ci`, silently tests whatever copy is installed in `~/.claude/skills` instead of the working tree. The load check (stage 1) now runs without a manifest rather than skipping.
+
+### Known limitations
+
+- The CI schema accepts only section-level IDs in `not_applicable`, so the CI variant cannot mark a single requirement not applicable. On non-web targets this leaves such requirements out of the report and lowers the measured coverage. Tracked for 3.3.0 in [#42](https://github.com/TarkinLarson/asvs-auditor/issues/42).
+
 ## [3.2.1] - 2026-11-09
 
 Correctness patch for the methodology added in 3.2.0. No JSON field was added, removed, or changed in meaning.

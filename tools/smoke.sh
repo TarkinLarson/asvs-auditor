@@ -10,7 +10,9 @@
 #                      line endings, and (unless --offline) ASVS reference drift
 #   stage 1  load      the skill loads with no plugin errors, via --plugin-dir
 #   stage 2  scan      a real CI scan of --target: output parses, the scan actually
-#                      ran, and the target tree is left byte-for-byte unmodified
+#                      ran and swept the standard, the report is internally
+#                      consistent, and the target tree is left byte-for-byte
+#                      unmodified
 #
 # Nothing here reads credentials, writes outside the repo's .smoke/ directory and
 # a temporary copy of the target, or contacts any host other than the ones the
@@ -24,10 +26,13 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ARTIFACT_DIR="$REPO_ROOT/.smoke"
 MANIFEST="$REPO_ROOT/.claude-plugin/plugin.json"
 SCHEMA="$REPO_ROOT/schema/asvs-report.schema.json"
+REFERENCE_DIR="$REPO_ROOT/skills/agent-asvs-ci/reference"
 
 STAGES="0"
 TARGET=""
-BUDGET="3"
+BUDGET="10"
+MAX_TURNS="100"
+MIN_COVERAGE="90"
 MODEL=""
 INVOKE=""
 OFFLINE=0
@@ -53,7 +58,10 @@ usage() {
 Options:
   --stages LIST     comma-separated stages to run (default: 0)
   --target PATH     directory to scan in stage 2 (required for stage 2)
-  --budget USD      hard spend cap per model run (default: 3)
+  --budget USD      hard spend cap per model run (default: 10)
+  --max-turns N     stage 2: turn cap for the scan (default: 100)
+  --min-coverage P  stage 2: percent of in-scope requirements the scan must
+                    record as checked (default: 90)
   --model ID        model to pass to the CLI, e.g. claude-opus-5-5
   --invoke CMD      slash command to run (default: derived from the plugin manifest)
   --offline         skip checks that need network access
@@ -103,8 +111,15 @@ sys.exit(0 if parse(sys.argv[1]) >= parse(sys.argv[2]) else 1)
 PY
 }
 
+# The plugin's namespace: the manifest's name, or, with no manifest, the
+# directory name, which is what Claude Code derives it from. Invoking the bare
+# skill name instead would resolve to whatever copy is installed in
+# ~/.claude/skills and silently test that rather than this working tree.
 plugin_namespace() {
-  [ -f "$MANIFEST" ] || return 1
+  if [ ! -f "$MANIFEST" ]; then
+    basename "$REPO_ROOT"
+    return 0
+  fi
   python3 - "$MANIFEST" <<'PY'
 import json, sys
 try:
@@ -148,28 +163,37 @@ stage_static() {
     skip "line-ending and trailing-newline checks (git not installed)"
   else
     local offenders
+    # Reads the index, not the working tree: what ships is what git stores, and
+    # under core.autocrlf=true a working copy checked out before .gitattributes
+    # existed can be CRLF while the stored blob is LF. Staged edits are checked
+    # too, since they are what the next commit would ship.
     offenders="$(python3 - "$REPO_ROOT" <<'PY'
-import pathlib, subprocess, sys
-root = pathlib.Path(sys.argv[1])
+import subprocess, sys
+root = sys.argv[1]
 listing = subprocess.run(
     ["git", "ls-files", "-z"], cwd=root, capture_output=True, check=True
 ).stdout
-bad = []
-for name in listing.split(b"\0"):
-    if not name:
+names = [n.decode() for n in listing.split(b"\0") if n]
+batch = subprocess.run(
+    ["git", "cat-file", "--batch"], cwd=root, check=True, capture_output=True,
+    input="".join(f":{name}\n" for name in names).encode(),
+).stdout
+bad, pos = [], 0
+for name in names:
+    header_end = batch.index(b"\n", pos)
+    header = batch[pos:header_end].split()
+    if header[-1] == b"missing":
+        pos = header_end + 1
         continue
-    path = root / name.decode()
-    try:
-        data = path.read_bytes()
-    except OSError:
-        continue
+    size = int(header[2])
+    data = batch[header_end + 1 : header_end + 1 + size]
+    pos = header_end + 1 + size + 1  # blob, then a trailing LF
     if b"\0" in data[:8192]:
         continue  # binary
-    rel = path.relative_to(root).as_posix()
     if b"\r" in data:
-        bad.append(f"{rel}: CRLF line endings")
+        bad.append(f"{name}: CRLF line endings")
     elif data and not data.endswith(b"\n"):
-        bad.append(f"{rel}: no trailing newline")
+        bad.append(f"{name}: no trailing newline")
 print("\n".join(bad))
 PY
 )"
@@ -209,10 +233,6 @@ stage_load() {
 
   if ! command -v claude >/dev/null 2>&1; then
     skip "plugin load check (claude CLI not installed)"
-    return
-  fi
-  if [ ! -f "$MANIFEST" ]; then
-    skip "plugin load check (no .claude-plugin/plugin.json yet)"
     return
   fi
 
@@ -293,7 +313,7 @@ stage_scan() {
     if namespace="$(plugin_namespace)"; then
       invoke="/${namespace}:agent-asvs-ci"
     else
-      skip "scan check (no plugin manifest; pass --invoke to name the slash command)"
+      skip "scan check (could not read the plugin manifest; pass --invoke to name the slash command)"
       return
     fi
   fi
@@ -311,7 +331,7 @@ stage_scan() {
     --plugin-dir "$REPO_ROOT"
     -p "$invoke"
     --permission-mode dontAsk
-    --max-turns 40
+    --max-turns "$MAX_TURNS"
     --max-budget-usd "$BUDGET"
     --output-format json
   )
@@ -398,6 +418,76 @@ PY
     *) fail "report is unusable — ${verdict#FAIL }" ;;
   esac
 
+  # A usable report can still be a shallow or self-contradictory one. Coverage
+  # is measured against the bundled reference rather than trusted from the
+  # report, and the compliance arrays must agree with the findings they
+  # summarise.
+  if [ -f "$ARTIFACT_DIR/stage2-report.json" ]; then
+    local consistency
+    consistency="$(python3 - "$ARTIFACT_DIR/stage2-report.json" "$REFERENCE_DIR" "$MIN_COVERAGE" <<'PY'
+import json, pathlib, re, sys
+
+report = json.load(open(sys.argv[1], encoding="utf-8"))
+reference, min_coverage = pathlib.Path(sys.argv[2]), float(sys.argv[3])
+
+level = {"L1": 1, "L2": 2, "L3": 3}.get((report.get("scan_metadata") or {}).get("asvs_level"), 2)
+row = re.compile(r"^\| \*\*(\d+\.\d+\.\d+)\*\* \| L([123]) \|", re.M)
+in_scope = {
+    f"V{req}"
+    for chapter in reference.glob("V*.md")
+    for req, lvl in row.findall(chapter.read_text(encoding="utf-8"))
+    if int(lvl) <= level
+}
+if not in_scope:
+    print(f"FAIL no requirements parsed from {reference}")
+    raise SystemExit(0)
+
+summary = report.get("compliance_summary") or {}
+not_applicable = summary.get("not_applicable") or []
+in_scope = {
+    req for req in in_scope
+    if not any(req == na or req.startswith(na + ".") for na in not_applicable)
+}
+
+checked = set(summary.get("checked_requirements") or [])
+passed = set(summary.get("passed_requirements") or [])
+failed = set(summary.get("failed_requirements") or [])
+findings = report.get("findings") or []
+finding_ids = {f.get("id") for f in findings}
+finding_reqs = {f.get("asvs_requirement") for f in findings}
+
+problems = []
+if passed & failed:
+    problems.append(f"passed and failed overlap: {sorted(passed & failed)}")
+if (passed | failed) - checked:
+    problems.append(f"passed/failed but not checked: {sorted((passed | failed) - checked)}")
+# With the 50-finding cap engaged, failed requirements may have no emitted finding.
+if not (report.get("scan_summary") or {}).get("findings_truncated") and failed != finding_reqs:
+    problems.append(f"failed_requirements and the findings disagree on: {sorted(failed ^ finding_reqs)}")
+for index, rec in enumerate(report.get("recommendations") or []):
+    addressed = set(rec.get("findings_addressed") or [])
+    if not addressed:
+        problems.append(f"recommendations[{index}] links no finding")
+    elif addressed - finding_ids:
+        problems.append(f"recommendations[{index}] links unknown ids: {sorted(addressed - finding_ids)}")
+
+swept = checked & in_scope
+coverage = 100.0 * len(swept) / len(in_scope) if in_scope else 100.0
+if coverage < min_coverage:
+    problems.append(f"coverage {coverage:.0f}% is below --min-coverage {min_coverage:g}%")
+detail = (f"{len(swept)}/{len(in_scope)} in-scope requirements checked ({coverage:.0f}%): "
+          f"{len(passed & swept)} passed, {len(failed & swept)} failed, "
+          f"{len(swept - passed - failed)} inconclusive")
+# ASCII only: on Windows a piped Python stdout is not UTF-8.
+print(("FAIL " + "; ".join(problems) + "; " if problems else "PASS ") + detail)
+PY
+)"
+    case "$consistency" in
+      PASS*) pass "report swept the standard and is consistent — ${consistency#PASS }" ;;
+      *) fail "report is shallow or inconsistent — ${consistency#FAIL }" ;;
+    esac
+  fi
+
   # Conformance is checked separately from usability: --json-schema constrains
   # the shape at generation time, and this proves the committed contract and
   # what the scanner emits have not drifted apart.
@@ -454,6 +544,8 @@ while [ $# -gt 0 ]; do
     --stages) STAGES="${2:?--stages needs a value}"; shift 2 ;;
     --target) TARGET="${2:?--target needs a path}"; shift 2 ;;
     --budget) BUDGET="${2:?--budget needs a value}"; shift 2 ;;
+    --max-turns) MAX_TURNS="${2:?--max-turns needs a value}"; shift 2 ;;
+    --min-coverage) MIN_COVERAGE="${2:?--min-coverage needs a value}"; shift 2 ;;
     --model) MODEL="${2:?--model needs a value}"; shift 2 ;;
     --invoke) INVOKE="${2:?--invoke needs a value}"; shift 2 ;;
     --offline) OFFLINE=1; shift ;;

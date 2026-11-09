@@ -42,7 +42,7 @@ AI-powered security auditor agent for [Claude Code](https://claude.com/claude-co
 
 ```bash
 # Copy the skill (prompt + bundled ASVS requirement reference) into your project
-git clone --depth 1 --branch v3.2.1 https://github.com/TarkinLarson/asvs-auditor /tmp/asvs-auditor
+git clone --depth 1 --branch v3.2.2 https://github.com/TarkinLarson/asvs-auditor /tmp/asvs-auditor
 mkdir -p .claude/skills
 cp -r /tmp/asvs-auditor/skills/agent-asvs .claude/skills/
 ```
@@ -196,12 +196,12 @@ Notes:
 - The skill must be present in the repo at `.claude/skills/agent-asvs-ci/SKILL.md` for `/agent-asvs-ci` to resolve, and [`schema/asvs-report.schema.json`](schema/asvs-report.schema.json) must be in the repo for the `--json-schema` argument above. Copy both when you install.
 - **The schema is the output contract.** [`schema/asvs-report.schema.json`](schema/asvs-report.schema.json) (JSON Schema draft-07) defines every field, which are required, and the permitted values. Passing it to `--json-schema` constrains the scanner's reply; you can also validate a report you already have with any standard validator, e.g. `check-jsonschema --schemafile schema/asvs-report.schema.json scan.json` or `ajv validate -s schema/asvs-report.schema.json -d scan.json`. It is versioned with the skill: added fields are a minor release, removed fields or changed meanings are a major one.
 - **Without `--json-schema`, keep the extraction defensive.** Model output can include markdown fences or preamble despite the prompt's instructions — in testing, an unconstrained run did exactly that — so scrape with something like `sed -n '/^{/,/^}/p'` and treat unparseable output as a failed scan.
-- **A valid report is not a truthful one.** The schema checks shape, not substance: a scan that read nothing and reported `"pass": true` is perfectly valid JSON. Fail the build unless `scan_summary.files_scanned` is a positive number and `compliance_summary.checked_requirements` is non-empty — that is what a refusal or a mis-invoked skill looks like.
+- **A valid report is not a truthful one.** The schema checks shape, not substance: a scan that read nothing and reported `"pass": true` is perfectly valid JSON. Fail the build unless `scan_summary.files_scanned` is a positive number and `compliance_summary.checked_requirements` is non-empty — that is what a refusal or a mis-invoked skill looks like. A non-empty list is still not a thorough one: the scanner sweeps every requirement at or below the target level, so compare `checked_requirements` against the in-scope requirement count (minus `not_applicable` sections) if you want to fail a shallow scan. `tools/smoke.sh` does exactly that against the bundled reference, and also checks that `failed_requirements` matches the findings and every recommendation links a finding.
 - **Two gate booleans.** `pass` covers only what the scanner could verify from source. `pass_including_unverifiable` is the strict reading and also fails on controls it could not confirm — security headers, TLS, and rate limiting enforced at a proxy or CDN, and documentation requirements that ask whether a policy is written down. Those findings carry `not_verifiable_in_code: true` at low confidence, are counted in `unverifiable_findings`, and still appear in the per-level violation totals; the two booleans differ by exactly that set. Gate on `pass` unless you want unverified to mean unsafe.
 
 - Findings violated by absence (missing rate limiting, missing lockfile) carry `finding_type: "absence"` and are anchored to the file and line where the control belongs, so every finding has a location.
 - On large codebases the emitted findings array is capped at 50 with `findings_truncated: true`; the per-level counters and `total_findings` always reflect everything found, so `pass` gating stays correct even when the list is truncated.
-- Finding IDs are derived from requirement, repo-relative path, and line (e.g. `ASVS-V1.2.5-src/Services/ReportService.cs-87`) rather than a sequence number, so a finding keeps its identity between runs while it stays in the same place. Note that editing lines above a finding shifts its line number and therefore its ID — key on requirement plus path if you need identity to survive refactoring.
+- Finding IDs are derived from requirement, repo-relative path, and line (e.g. `ASVS-V1.2.5-src/Services/ReportService.cs-87`) rather than a sequence number, so a finding keeps its identity between runs while it stays in the same place. The prompt fixes both halves by rule — one finding per violated requirement, anchored on the construct that introduces the weakness — so two runs over the same tree should agree. Note that editing lines above a finding shifts its line number and therefore its ID — key on requirement plus path if you need identity to survive refactoring.
 - Restricted runners without outbound network access are fine as long as the `reference/` directory is committed alongside `SKILL.md` — requirement text is read from disk, so citations stay exact. Only a `SKILL.md`-only install degrades to section-level citations offline.
 - Audits on large codebases can take several minutes. Consider running on a schedule or scoping to PRs that touch sensitive paths rather than every push.
 
@@ -210,10 +210,11 @@ Notes:
 1. **Reconnaissance** — maps the codebase, identifies languages and frameworks
 2. **Category-by-category review** — checks each relevant ASVS chapter against your code
 3. **Endpoint enumeration** — builds a route map and verifies each endpoint carries auth, authz, CSRF, and rate-limiting controls
-4. **Vulnerability pattern scanning** — targeted searches for injection, XSS, secrets, auth gaps, plus absence-oriented verification of required controls
+4. **Vulnerability pattern scanning** — targeted searches for injection, XSS, secrets, and auth gaps
 5. **Configuration review** — security headers, TLS, dependencies, debug settings
-6. **Composite attack path analysis** — reviews findings as a set to identify chains where combined impact exceeds any single finding
-7. **Report generation** — findings with evidence, compliance matrix, prioritized remediation
+6. **Requirement sweep** — reads the bundled requirement text and gives every requirement at or below the target level a status (pass, fail, unverifiable, inconclusive, or not applicable), which is what finds controls that are missing rather than wrong
+7. **Composite attack path analysis** — reviews findings as a set to identify chains where combined impact exceeds any single finding
+8. **Report generation** — findings with evidence, compliance matrix, prioritized remediation
 
 ### False Positive Controls
 
@@ -223,6 +224,7 @@ Static AI review is prone to reporting patterns that aren't real risk. The agent
 - **Scope exclusions** — vendored, generated, and build-output directories are skipped. Test code and fixtures are only reported when they represent production risk, so a deliberately vulnerable fixture doesn't become a finding.
 - **Placeholder detection** — environment-variable indirection and obvious dummy values are not reported as hardcoded secrets.
 - **Infrastructure awareness** — controls that commonly live at a proxy, CDN, or gateway are marked as unverifiable from source rather than reported as confirmed violations.
+- **Platform defaults** — leaving an option unset is not reported when the platform's default satisfies the requirement and the vendor recommends relying on it, such as .NET negotiating TLS versions with the operating system.
 - **Confidence levels** — every finding carries `high`/`medium`/`low`, so you can filter before acting.
 - **Honest coverage** — a requirement is only reported as checked if it was actually searched for, and only as passed if the control was located and verified. Chapters whose technology is absent are marked not-applicable with a reason.
 
