@@ -106,6 +106,11 @@
           "minimum": 0,
           "description": "Findings carrying not_verifiable_in_code. Exactly the gap between the two gate booleans."
         },
+        "root_causes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Distinct root_cause values across all findings, including any the emit cap dropped: the number of fixes, where the per-level counters are the number of requirements violated. Optional so that reports from before 3.3.0 still validate; the prompt always emits it."
+        },
         "findings_truncated": {
           "type": "boolean",
           "description": "True only when the 50-finding emit cap dropped something. Deduplication does not set it."
@@ -230,6 +235,16 @@
             "type": "boolean",
             "description": "Optional, and omitted entirely unless true. Marks a control that may be enforced at a proxy, CDN, gateway, or in documentation. Excluded from `pass`."
           },
+          "assessor_question": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Optional, and omitted unless needed. A yes/no question only the human assessor can settle, such as whether a deployed target is production. The finding's facts are verified, so it still counts and still fails `pass`."
+          },
+          "root_cause": {
+            "type": "string",
+            "pattern": "^.+:[0-9]+$",
+            "description": "<repo-relative path>:<line> where the fixing change is made. Findings one change would fix share the value; it can differ from file and line. Optional so that reports from before 3.3.0 still validate; the prompt always emits it."
+          },
           "references": {
             "type": "array",
             "items": {
@@ -272,6 +287,14 @@
           "items": {
             "type": "string",
             "pattern": "^V[0-9]{1,2}(\\.[0-9]{1,2}){1,2}$"
+          }
+        },
+        "sampled_requirements": {
+          "type": "object",
+          "description": "Optional. Passed requirements whose evidence was sampled rather than read in full, keyed by requirement ID (e.g. V8.2.2) and mapped to 'sampled n of N: <method>'. Every key is in passed_requirements. Omitted when nothing was sampled.",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^sampled [0-9]+ of [0-9]+: .+$"
           }
         },
         "not_applicable": {
