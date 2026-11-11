@@ -444,10 +444,14 @@ if not in_scope:
 
 summary = report.get("compliance_summary") or {}
 not_applicable = summary.get("not_applicable") or []
-in_scope = {
-    req for req in in_scope
-    if not any(req == na or req.startswith(na + ".") for na in not_applicable)
-}
+
+
+def is_not_applicable(req):
+    # An entry covers itself and everything beneath it: V4 covers V4.3.1, V1.2.4 only itself.
+    return any(req == na or req.startswith(na + ".") for na in not_applicable)
+
+
+in_scope = {req for req in in_scope if not is_not_applicable(req)}
 
 checked = set(summary.get("checked_requirements") or [])
 passed = set(summary.get("passed_requirements") or [])
@@ -466,6 +470,9 @@ if (passed | failed) - checked:
     problems.append(f"passed/failed but not checked: {sorted((passed | failed) - checked)}")
 if sampled - passed:
     problems.append(f"sampled but not passed: {sorted(sampled - passed)}")
+checked_and_na = sorted(req for req in checked if is_not_applicable(req))
+if checked_and_na:
+    problems.append(f"checked but also not applicable: {checked_and_na}")
 # With the 50-finding cap engaged, failed requirements may have no emitted finding.
 if not truncated and failed != finding_reqs:
     problems.append(f"failed_requirements and the findings disagree on: {sorted(failed ^ finding_reqs)}")

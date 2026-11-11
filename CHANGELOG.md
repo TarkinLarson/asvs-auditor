@@ -6,7 +6,7 @@ This project follows [Semantic Versioning](https://semver.org/). Since these are
 
 ## [Unreleased]
 
-Coverage and counting at scale ([#45](https://github.com/TarkinLarson/asvs-auditor/issues/45)) and the mapping-rule gaps behind it ([#46](https://github.com/TarkinLarson/asvs-auditor/issues/46)), both found in a full L2 audit of a ~5,500-file codebase. This is a minor release: four optional fields were added to the JSON contract, and a 3.2.x report still validates against the new schema.
+Coverage and counting at scale ([#45](https://github.com/TarkinLarson/asvs-auditor/issues/45)) and the mapping-rule gaps behind it ([#46](https://github.com/TarkinLarson/asvs-auditor/issues/46)), both found in a full L2 audit of a ~5,500-file codebase. This is a minor release: four optional fields were added to the JSON contract and `not_applicable` accepts more than it did ([#42](https://github.com/TarkinLarson/asvs-auditor/issues/42)), and a 3.2.x report still validates against the new schema.
 
 ### Added
 
@@ -17,7 +17,8 @@ Coverage and counting at scale ([#45](https://github.com/TarkinLarson/asvs-audit
 
 - **The 50-finding cap keeps attack paths whole.** "L1 first, then by confidence" pushed a fully traced L2 finding at the centre of an attack path below low-confidence L1 documentation findings. Findings that are links in an attack path now take the first places. In the CI variant, this also guarantees that every ID a chain recommendation links is emitted. The cap decides which findings get a full write-up, not their priority.
 - **Reachability outside the repository no longer lowers confidence.** A fully traced flaw was capped at medium because whether an attacker could reach it depended on DNS. Confidence now comes from the code, and the deployment dependency is stated alongside it. This is distinct from a control that may be enforced outside the code, which remains unverifiable.
-- `tools/smoke.sh` stage 2 also fails a report where a sampled requirement is not a passed one, a finding lacks `root_cause`, or `root_causes` disagrees with the findings.
+- **The CI variant can mark a single requirement not applicable** ([#42](https://github.com/TarkinLarson/asvs-auditor/issues/42)). The schema restricted `compliance_summary.not_applicable` to chapter and section IDs. On a target with no HTTP server or no database, single requirements inside otherwise applicable sections (1.2.4, 3.2.1, 12.2.2, 14.2.2) had nothing to test and could only be left out, which lowered the coverage figure of a legitimate scan. `not_applicable` now also accepts requirement-level IDs, each with a reason, as the interactive variant has allowed since 3.2.2. A consumer that assumed every entry was a chapter or section must now expect all three forms.
+- `tools/smoke.sh` stage 2 also fails a report where a sampled requirement is not a passed one, a finding lacks `root_cause`, `root_causes` disagrees with the findings, or a requirement is both checked and not applicable.
 
 ### Added — mapping rules and process ([#46](https://github.com/TarkinLarson/asvs-auditor/issues/46))
 
