@@ -5,7 +5,9 @@ on:
     paths:
       - 'skills/*/reference/**'
       - 'skills/*/SKILL.md'
+      - 'skills/*/sub-agent-rules.md'
       - 'tools/generate-asvs-reference.py'
+      - 'tools/generate-sub-agent-rules.py'
       - '.github/workflows/asvs-reference-drift.yml'
   # No path filter: this job is a required status check on main, so it must
   # report on every pull request. It is a few seconds and passes trivially when
@@ -32,3 +34,6 @@ jobs:
 
       - name: Verify the committed reference matches the pinned ASVS tag
         run: python3 tools/generate-asvs-reference.py --check
+
+      - name: Verify the sub-agent rule file matches SKILL.md
+        run: python3 tools/generate-sub-agent-rules.py --check
