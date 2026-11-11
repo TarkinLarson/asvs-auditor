@@ -233,7 +233,7 @@ Static AI review is prone to reporting patterns that aren't real risk. The agent
 
 ### ASVS Requirement Accuracy
 
-Each skill ships the **full text of all 345 ASVS 5.0 requirements** in `reference/V<n>.md`, one file per chapter, with exact requirement IDs and levels. `SKILL.md` carries only a section index — titles, requirement counts, level ranges — and instructs the agent to read the relevant chapter file before citing anything. Because supporting files load on demand, the full standard costs no context until the agent needs a specific chapter.
+Each skill ships the **full text of all 345 ASVS 5.0 requirements** in `reference/`, with exact requirement IDs and levels. Each chapter's L1 and L2 requirements are in `V<n>.md` and its L3 requirements in `V<n>-L3.md`, so an audit at the default L2 target does not load L3 text it would skip. `SKILL.md` carries only a section index — titles, requirement counts, level ranges — and instructs the agent to read the relevant chapter file before citing anything. Because supporting files load on demand, the full standard costs no context until the agent needs a specific chapter.
 
 **The reference is generated, not hand-written.** `tools/generate-asvs-reference.py` derives it from the pinned [`OWASP/ASVS@v5.0.0`](https://github.com/OWASP/ASVS/tree/v5.0.0/5.0/en) source, and [a CI workflow](.github/workflows/asvs-reference-drift.yml) regenerates and diffs on every change plus weekly, so committed output cannot drift from the spec:
 
