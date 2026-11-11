@@ -6,25 +6,29 @@ regenerate them instead, or CI will fail on drift.
 
 17 chapters, 80 sections, 345 requirements.
 
-| File | Chapter | Sections | Requirements |
-| :--- | :--- | :---: | :---: |
-| [V1.md](V1.md) | Encoding and Sanitization | 5 | 30 |
-| [V2.md](V2.md) | Validation and Business Logic | 4 | 13 |
-| [V3.md](V3.md) | Web Frontend Security | 7 | 31 |
-| [V4.md](V4.md) | API and Web Service | 4 | 16 |
-| [V5.md](V5.md) | File Handling | 4 | 13 |
-| [V6.md](V6.md) | Authentication | 8 | 47 |
-| [V7.md](V7.md) | Session Management | 6 | 19 |
-| [V8.md](V8.md) | Authorization | 4 | 13 |
-| [V9.md](V9.md) | Self-contained Tokens | 2 | 7 |
-| [V10.md](V10.md) | OAuth and OIDC | 7 | 36 |
-| [V11.md](V11.md) | Cryptography | 7 | 24 |
-| [V12.md](V12.md) | Secure Communication | 3 | 12 |
-| [V13.md](V13.md) | Configuration | 4 | 21 |
-| [V14.md](V14.md) | Data Protection | 3 | 13 |
-| [V15.md](V15.md) | Secure Coding and Architecture | 4 | 21 |
-| [V16.md](V16.md) | Security Logging and Error Handling | 5 | 17 |
-| [V17.md](V17.md) | WebRTC | 3 | 12 |
+Each chapter's L1–L2 requirements are in `V<n>.md` and its L3 requirements in
+`V<n>-L3.md`, with the number of requirements in each file in brackets. An audit
+targeting L1–L2 reads only the first; the split keeps it from loading text it would skip.
+
+| L1–L2 file | L3 file | Chapter | Sections | Requirements |
+| :--- | :--- | :--- | :---: | :---: |
+| [V1.md](V1.md) (27) | [V1-L3.md](V1-L3.md) (3) | Encoding and Sanitization | 5 | 30 |
+| [V2.md](V2.md) (11) | [V2-L3.md](V2-L3.md) (2) | Validation and Business Logic | 4 | 13 |
+| [V3.md](V3.md) (19) | [V3-L3.md](V3-L3.md) (12) | Web Frontend Security | 7 | 31 |
+| [V4.md](V4.md) (10) | [V4-L3.md](V4-L3.md) (6) | API and Web Service | 4 | 16 |
+| [V5.md](V5.md) (9) | [V5-L3.md](V5-L3.md) (4) | File Handling | 4 | 13 |
+| [V6.md](V6.md) (35) | [V6-L3.md](V6-L3.md) (12) | Authentication | 8 | 47 |
+| [V7.md](V7.md) (18) | [V7-L3.md](V7-L3.md) (1) | Session Management | 6 | 19 |
+| [V8.md](V8.md) (7) | [V8-L3.md](V8-L3.md) (6) | Authorization | 4 | 13 |
+| [V9.md](V9.md) (7) | — | Self-contained Tokens | 2 | 7 |
+| [V10.md](V10.md) (29) | [V10-L3.md](V10-L3.md) (7) | OAuth and OIDC | 7 | 36 |
+| [V11.md](V11.md) (14) | [V11-L3.md](V11-L3.md) (10) | Cryptography | 7 | 24 |
+| [V12.md](V12.md) (9) | [V12-L3.md](V12-L3.md) (3) | Secure Communication | 3 | 12 |
+| [V13.md](V13.md) (13) | [V13-L3.md](V13-L3.md) (8) | Configuration | 4 | 21 |
+| [V14.md](V14.md) (9) | [V14-L3.md](V14-L3.md) (4) | Data Protection | 3 | 13 |
+| [V15.md](V15.md) (13) | [V15-L3.md](V15-L3.md) (8) | Secure Coding and Architecture | 4 | 21 |
+| [V16.md](V16.md) (16) | [V16-L3.md](V16-L3.md) (1) | Security Logging and Error Handling | 5 | 17 |
+| [V17.md](V17.md) (7) | [V17-L3.md](V17-L3.md) (5) | WebRTC | 3 | 12 |
 
 ## Why these files exist
 

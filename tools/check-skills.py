@@ -57,7 +57,8 @@ BOOLEAN_FIELDS = {"background", "disable-model-invocation", "user-invocable"}
 BOOLEAN_VALUES = {"yes", "no", "on", "off", "1", "0", "true", "false"}
 EFFORT_VALUES = {"low", "medium", "high", "xhigh", "max"}
 
-# One file per ASVS 5.0 chapter, plus the attribution README.
+# One file per ASVS 5.0 chapter (plus one for its L3 requirements, when it has
+# any), and the attribution README.
 EXPECTED_CHAPTERS = 17
 
 KEY_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):(.*)$")
@@ -135,6 +136,14 @@ def check_reference(skill_dir: Path) -> list[str]:
     missing = [f"V{n}.md" for n in range(1, EXPECTED_CHAPTERS + 1) if not (reference / f"V{n}.md").is_file()]
     if missing:
         problems.append(f"reference/ is missing {len(missing)} chapter file(s): {', '.join(missing)}")
+    # A chapter's L3 requirements ship in a second file, which the chapter file
+    # names. Which chapters have one is the generator's knowledge, so read it
+    # from the files rather than repeating the list here.
+    for n in range(1, EXPECTED_CHAPTERS + 1):
+        chapter, upper = reference / f"V{n}.md", f"V{n}-L3.md"
+        if chapter.is_file() and f"`{upper}`" in chapter.read_text(encoding="utf-8"):
+            if not (reference / upper).is_file():
+                problems.append(f"reference/{upper} is missing — V{n}.md says it holds the chapter's L3 requirements")
     if not (reference / "README.md").is_file():
         problems.append("reference/README.md is missing — it carries the CC BY-SA 4.0 attribution")
     return problems
