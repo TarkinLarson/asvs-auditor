@@ -7,7 +7,8 @@
 # must be opted into explicitly.
 #
 #   stage 0  static    skill frontmatter, plugin manifest, reference completeness,
-#                      line endings, and (unless --offline) ASVS reference drift
+#                      sub-agent rule drift, line endings, and (unless --offline)
+#                      ASVS reference drift
 #   stage 1  load      the skill loads with no plugin errors, via --plugin-dir
 #   stage 2  scan      a real CI scan of --target: output parses, the scan actually
 #                      ran and swept the standard, the report is internally
@@ -142,6 +143,12 @@ stage_static() {
     pass "skill frontmatter and bundled reference are valid"
   else
     fail "skill validation failed — rerun: python3 tools/check-skills.py"
+  fi
+
+  if python3 "$REPO_ROOT/tools/generate-sub-agent-rules.py" --check >/dev/null 2>&1; then
+    pass "sub-agent rule file matches SKILL.md"
+  else
+    fail "sub-agent rules have drifted — rerun: python3 tools/generate-sub-agent-rules.py"
   fi
 
   if [ ! -f "$MANIFEST" ]; then

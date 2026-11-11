@@ -47,7 +47,7 @@ mkdir -p .claude/skills
 cp -r /tmp/asvs-auditor/skills/agent-asvs .claude/skills/
 ```
 
-The skill is a **directory**, not a single file — `SKILL.md` plus `reference/` holding the full ASVS 5.0 requirement text. `SKILL.md` alone still works (it falls back to fetching chapters from GitHub), but shipping the folder is what makes offline and restricted-runner scans cite requirements accurately.
+The skill is a **directory**, not a single file — `SKILL.md` plus `reference/` holding the full ASVS 5.0 requirement text, and, for the interactive auditor, `sub-agent-rules.md`, which it hands to the sub-agents it uses on large codebases. `SKILL.md` alone still works (it falls back to fetching chapters from GitHub), but shipping the folder is what makes offline and restricted-runner scans cite requirements accurately.
 
 Then in Claude Code:
 
