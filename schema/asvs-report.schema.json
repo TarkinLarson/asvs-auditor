@@ -301,9 +301,9 @@
           "type": "array",
           "items": {
             "type": "string",
-            "pattern": "^V[0-9]{1,2}(\\.[0-9]{1,2})?$"
+            "pattern": "^V[0-9]{1,2}(\\.[0-9]{1,2}){0,2}$"
           },
-          "description": "Section-level IDs for technology that is absent, e.g. V17 or V4.3."
+          "description": "IDs whose technology is absent: a chapter (V17), a section (V4.3), or a single requirement (V1.2.4) inside an otherwise applicable section. An entry covers every requirement beneath it, and none of those appears in checked_requirements."
         },
         "not_applicable_reasons": {
           "type": "object",
