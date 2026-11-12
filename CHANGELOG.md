@@ -29,6 +29,11 @@ Coverage and counting at scale ([#45](https://github.com/TarkinLarson/asvs-audit
 - **Sub-agent merge contract** (interactive variant). Sub-agents return one row per requirement, never prose totals. The coordinator computes every count from those rows, re-sends requirements that come back missing, and re-checks each FAIL, UNVERIFIABLE and INCONCLUSIVE against the documentation, prerequisite and judgement rules. In the audit, two sub-agents' own totals contradicted their tables.
 - **Revision recording** (interactive variant). Reconnaissance records the commit and uncommitted files with read-only git commands, and checks both again before the report is written. If they changed, findings in the changed files are re-read and the change is disclosed. The audited repository moved twice mid-run. Copying it to a snapshot was rejected because that would write into the audit target.
 
+### Changed — interactive skill
+
+- **Restated material removed and contradictions fixed** ([#51](https://github.com/TarkinLarson/asvs-auditor/issues/51)). The interactive prompt carried about 3.5 KB that repeated rules given properly elsewhere: the persona and Core Beliefs, Automatic Fail Triggers, Success Metrics, and a closing ASVS Reference section. They are replaced by a three-line **Stance** section and a short **Writing Findings** section, which keeps the two rules that were stated nowhere else (proof of concept for L1 presence findings, and remediation specific to the detected stack). Two contradictions went with them: the "paranoid, assumes breach" persona pulled against Facts, Not Judgement, and "if it's not in ASVS, question whether it's a real security issue" was weaker than the mapping rule that an observation violating no requirement is left out. No rule was removed. The prompt is 2.2 KB smaller (51.5 KB to 49.3 KB).
+- The compliance matrix's first two columns are now headed `Requirement` and `Summary`. They were headed `Category` and `Requirement` but held a requirement ID and a summary.
+
 ## [3.2.2] - 2026-11-09
 
 Coverage and repeatability patch. No JSON field was added, removed, or changed in meaning; two schema field descriptions were clarified to match what the prompt already required.
