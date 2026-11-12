@@ -4,9 +4,9 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/). Since these are prompt-based agents (not compiled software), versioning reflects meaningful changes to agent behavior, accuracy, or coverage.
 
-## [Unreleased]
+## [3.3.0] - 2026-11-12
 
-Coverage and counting at scale ([#45](https://github.com/TarkinLarson/asvs-auditor/issues/45)) and the mapping-rule gaps behind it ([#46](https://github.com/TarkinLarson/asvs-auditor/issues/46)), both found in a full L2 audit of a ~5,500-file codebase. This is a minor release: four optional fields were added to the JSON contract and `not_applicable` accepts more than it did ([#42](https://github.com/TarkinLarson/asvs-auditor/issues/42)), and a 3.2.x report still validates against the new schema.
+Coverage and counting at scale ([#45](https://github.com/TarkinLarson/asvs-auditor/issues/45)) and the mapping-rule gaps behind it ([#46](https://github.com/TarkinLarson/asvs-auditor/issues/46)), both found in a full L2 audit of a ~5,500-file codebase. This is a minor release: four optional fields were added to the JSON contract and `not_applicable` accepts more than it did ([#42](https://github.com/TarkinLarson/asvs-auditor/issues/42)), and a 3.2.x report still validates against the new schema. The interactive prompt also lost its restated material ([#51](https://github.com/TarkinLarson/asvs-auditor/issues/51)), sub-agents now read their rules from a generated file, and L3 requirement text moved into its own reference files ([#49](https://github.com/TarkinLarson/asvs-auditor/issues/49)).
 
 ### Added
 
@@ -256,6 +256,8 @@ Breaking release: the CI JSON output contract changed (severity field removed, p
 - Agent instructed to fetch chapter source from GitHub when unsure of exact requirement wording
 - False positive caveat added to "every app has vulnerabilities" personality trait
 
+[3.3.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v3.2.2...v3.3.0
+[3.2.2]: https://github.com/TarkinLarson/asvs-auditor/compare/v3.2.1...v3.2.2
 [3.2.1]: https://github.com/TarkinLarson/asvs-auditor/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/TarkinLarson/asvs-auditor/compare/v3.0.0...v3.1.0
