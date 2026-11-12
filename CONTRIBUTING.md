@@ -34,6 +34,11 @@ Thanks for your interest in improving the ASVS Auditor agents. This is a prompt 
   python3 tools/generate-asvs-reference.py           # regenerate
   python3 tools/generate-asvs-reference.py --check   # what CI runs
   ```
+- **Never edit `skills/agent-asvs/sub-agent-rules.md` by hand.** It is the part of the interactive `SKILL.md` between the `SUB-AGENT RULES` markers, copied word for word so sub-agents read the same rules as the coordinator. Edit `SKILL.md`, then regenerate; CI fails on drift:
+  ```bash
+  python3 tools/generate-sub-agent-rules.py           # regenerate
+  python3 tools/generate-sub-agent-rules.py --check   # what CI runs
+  ```
 - Every ASVS reference you write elsewhere in a prompt must use the exact `VX.Y.Z` format and match the bundled `reference/V<n>.md`, which is the authority — check there before citing
 - If you believe the reference is wrong, the generator or the pinned tag is wrong; fix that, don't patch the output
 

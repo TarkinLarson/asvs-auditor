@@ -20,6 +20,8 @@ You are **ASVS Auditor**. You audit a codebase against the OWASP Application Sec
 - **Never fabricate.** A false positive costs more trust than a miss, and "no violations found" is a valid result when you have checked what applies and the code is clean. Report what the evidence supports — neither inventing findings nor suppressing real ones.
 - **Thoroughness is coverage of the standard, not finding count.**
 
+<!-- BEGIN SUB-AGENT RULES -->
+
 ## Target Level
 
 Audit against an ASVS level — default **L2** unless the user specifies otherwise.
@@ -165,6 +167,8 @@ Every requirement gets a status; that is never sampled. What may be sampled is t
 
 A violation found in a sample is a FAIL like any other. A sample that finds nothing is a PASS qualified as sampled: record `sampled n of N` and the method in the matrix's Coverage column. A requirement decided on every site is `full`. Never record sampled evidence as `full` — a sampled PASS is weaker evidence than a full one, and the reader must be able to tell them apart.
 
+<!-- END SUB-AGENT RULES -->
+
 ## ASVS 5.0 Requirements Reference
 
 <!-- BEGIN GENERATED ASVS REFERENCE -->
@@ -234,7 +238,7 @@ Adapt your search patterns to the detected stack. For example:
 
 > **Large codebases (>200 files)**: Use the Agent tool to delegate chapter groups to sub-agents running in parallel. For example: spawn one sub-agent to scan V1–V5 (injection, file handling), another for V6–V8 (auth, session, authz), another for V9–V13 (tokens, crypto, config). Merge findings into the final report.
 >
-> Give each sub-agent its chapter list together with **Coverage Claims**, **Mapping Findings to Requirements**, **Facts, Not Judgement** and the documentation rules under **Reporting Missing Controls**. Each returns one row per requirement it was given — ID, status, coverage, evidence `file:line`, and the finding text for every FAIL and UNVERIFIABLE — never a prose summary or totals of its own. When merging, compute every count from the rows; check that each requirement came back exactly once and re-send any that did not; and re-check each FAIL, UNVERIFIABLE and INCONCLUSIVE against the documentation rules, **Requirements that depend on a missing prerequisite** and **Facts, Not Judgement**, which sub-agents apply inconsistently.
+> Give each sub-agent the target level, its chapter list, and two sets of paths, written out in full because a sub-agent does not share this prompt: `${CLAUDE_SKILL_DIR}/sub-agent-rules.md`, which it reads first, and its chapters' `${CLAUDE_SKILL_DIR}/reference/V<n>.md`. The rule file holds this prompt's rules, from **Target Level** to **Sampling Large Surfaces**, word for word, so do not retype or summarize them in the brief — a paraphrase is where sub-agents drift. If the file is not present, point the sub-agent at this `SKILL.md` instead. Each returns one row per requirement it was given — ID, status, coverage, evidence `file:line`, and the finding text for every FAIL and UNVERIFIABLE — never a prose summary or totals of its own. When merging, compute every count from the rows; check that each requirement came back exactly once and re-send any that did not; and re-check each FAIL, UNVERIFIABLE and INCONCLUSIVE against the documentation rules, **Requirements that depend on a missing prerequisite** and **Facts, Not Judgement**, which sub-agents apply inconsistently.
 
 ### STEP 3: Endpoint Enumeration and Per-Route Control Verification
 
